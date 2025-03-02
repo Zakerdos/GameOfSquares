@@ -143,15 +143,6 @@
       margin-top: 2px;
       color: #2a2a2a;
     }
-    /* New CSS for mobile touchpad - now 800x600 */
-    #touchpad {
-      width: 800px;
-      height: 600px;
-      background-color: #444;
-      margin-top: 10px;
-      touch-action: none;
-      display: none; /* hidden by default; only shown on touch devices */
-    }
   </style>
 </head>
 <body>
@@ -179,10 +170,8 @@
     <canvas id="gameCanvas" width="800" height="600"></canvas>
     <div id="messageOverlay"></div>
   </div>
-  <!-- Touchpad element for mobile control (now 800x600) -->
-  <div id="touchpad"></div>
   <! Version mumber goes here >
-  <div id="devVersion">v1.2.3-touch1</div>
+  <div id="devVersion">v1.2.3-touch2</div>
   <script>
     let debug = 0;
     let highScore = 1;
@@ -545,6 +534,11 @@
     }
     
     let keys = {};
+    // Added for mobile touch control
+    let mobileTouchActive = false;
+    let mobileTouchX = 0;
+    let mobileTouchY = 0;
+    
     document.addEventListener("keydown", (event) => {
       if (controlsLocked) return;
       keys[event.key] = true;
@@ -652,6 +646,19 @@
       if (keys["ArrowDown"] || keys["s"]) dy += effectivePlayerSpeed;
       if (keys["ArrowLeft"] || keys["a"]) dx -= effectivePlayerSpeed;
       if (keys["ArrowRight"] || keys["d"]) dx += effectivePlayerSpeed;
+      
+      // Mobile touch control: if a touch is active, add a vector toward the touch point.
+      if (mobileTouchActive && !controlsLocked) {
+        let playerCenterX = player.x + player.size / 2;
+        let playerCenterY = player.y + player.size / 2;
+        let touchDx = mobileTouchX - playerCenterX;
+        let touchDy = mobileTouchY - playerCenterY;
+        let touchDistance = Math.sqrt(touchDx * touchDx + touchDy * touchDy);
+        if (touchDistance > 5) { // add a deadzone to avoid jitter
+          dx += (touchDx / touchDistance) * effectivePlayerSpeed;
+          dy += (touchDy / touchDistance) * effectivePlayerSpeed;
+        }
+      }
       
       let oldX = player.x;
       player.x += dx;
@@ -1092,7 +1099,7 @@
           event.preventDefault();
         }
       }
-    });
+    });    
     
     function debugSkipLevels(levelsToSkip) {
       player.level += levelsToSkip;
@@ -1110,67 +1117,37 @@
       spawnorb();
     }
     
-    // --- Mobile Touchpad Support ---
-    // Only activate if the device supports touch events.
-    if ("ontouchstart" in window) {
-      var touchpad = document.getElementById("touchpad");
-      touchpad.style.display = "block";
-      var touchThreshold = 20;
-      touchpad.addEventListener("touchstart", function(e) {
-        e.preventDefault();
-        handleTouch(e);
-      }, {passive:false});
-      touchpad.addEventListener("touchmove", function(e) {
-        e.preventDefault();
-        handleTouch(e);
-      }, {passive:false});
-      touchpad.addEventListener("touchend", function(e) {
-        e.preventDefault();
-        clearTouch(e);
-      }, {passive:false});
-      touchpad.addEventListener("touchcancel", function(e) {
-        e.preventDefault();
-        clearTouch(e);
-      }, {passive:false});
-      function handleTouch(e) {
-        var touch = e.touches[0];
-        var rect = touchpad.getBoundingClientRect();
-        var centerX = rect.width / 2;
-        var centerY = rect.height / 2;
-        var touchX = touch.clientX - rect.left;
-        var touchY = touch.clientY - rect.top;
-        // Reset mobile directional keys
-        delete keys["w"];
-        delete keys["a"];
-        delete keys["s"];
-        delete keys["d"];
-        if (touchX - centerX > touchThreshold) {
-          keys["d"] = true;
-        } else if (touchX - centerX < -touchThreshold) {
-          keys["a"] = true;
-        }
-        if (touchY - centerY > touchThreshold) {
-          keys["s"] = true;
-        } else if (touchY - centerY < -touchThreshold) {
-          keys["w"] = true;
-        }
+    // --- Mobile Touch Controls (added) ---
+    // These listeners enable touch-to-unpause and touch-and-hold movement towards the touched point.
+    canvas.addEventListener("touchstart", function(event) {
+      event.preventDefault();
+      let rect = canvas.getBoundingClientRect();
+      let touch = event.touches[0];
+      mobileTouchX = touch.clientX - rect.left;
+      mobileTouchY = touch.clientY - rect.top;
+      mobileTouchActive = true;
+      // Unpause the game if it is paused.
+      if (paused) {
+        paused = false;
+        levelPaused = false;
+        messageOverlay.textContent = "";
       }
-      function clearTouch(e) {
-        delete keys["w"];
-        delete keys["a"];
-        delete keys["s"];
-        delete keys["d"];
-        // If there's info text on screen, unpause (or restart if game over and prompt is available)
-        if (gameOver && tryAgainAvailable) {
-          restartGame();
-        } else if (paused && messageOverlay.textContent.trim() !== "") {
-          paused = false;
-          levelPaused = false;
-          messageOverlay.textContent = "";
-        }
-      }
-    }
-    // --- End Mobile Touchpad Support ---
+    });
+    
+    canvas.addEventListener("touchmove", function(event) {
+      event.preventDefault();
+      let rect = canvas.getBoundingClientRect();
+      let touch = event.touches[0];
+      mobileTouchX = touch.clientX - rect.left;
+      mobileTouchY = touch.clientY - rect.top;
+    });
+    
+    canvas.addEventListener("touchend", function(event) {
+      event.preventDefault();
+      mobileTouchActive = false;
+    });
+    // --- End Mobile Touch Controls ---
+    
   </script>
 </body>
 </html>
