@@ -1377,7 +1377,7 @@
         ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
         return;
       }
-		ctx.fillStyle = playerIsPink ? "pink" : "white";
+		ctx.fillStyle = playerIsPink ? "#FF1493" : "white";
 		ctx.fillRect(player.x, player.y, player.size, player.size);
       if (orbActive) {
         if (orb.isHex) {
@@ -1536,7 +1536,7 @@
 		  }
 		  if (cheatCodeBuffer === "3712") {
 			playerIsPink = true;
-			console.log("Cheat activated: Player is now pink!");
+			console.log("You are now pink!");
 		  }
 		}
     });
@@ -1560,9 +1560,9 @@
 	  let mouseY = event.clientY - rect.top;
 	  
 	  if (event.button === 0) { // Left click
-		// Always allow left-click on player to add a life.
-		if (mouseX >= player.x && mouseX <= player.x + player.size &&
+		if (debug && mouseX >= player.x && mouseX <= player.x + player.size &&
 			mouseY >= player.y && mouseY <= player.y + player.size) {
+		  console.log("Life added");
 		  player.lives++;
 		  event.preventDefault();
 		  return;
@@ -1574,39 +1574,42 @@
 		  let dx = mouseX - orbCenterX;
 		  let dy = mouseY - orbCenterY;
 		  if (Math.sqrt(dx * dx + dy * dy) <= orb.size / 2) {
+		  console.log("Level skipped");
 			debugSkipLevels(1);
 			event.preventDefault();
 			return;
 		  }
 		}
 		// Debug-only: Process clicks on enemy squares (sqrs)
-		if (debug) {
-		  let enemyFound = false;
-		  for (let i = 0; i < sqrs.length; i++) {
-			let enemy = sqrs[i];
-			if (mouseX >= enemy.x && mouseX <= enemy.x + enemy.size &&
-				mouseY >= enemy.y && mouseY <= enemy.y + enemy.size) {
-			  enemyFound = true;
-			  if (enemy.color === "yellow") {
-				enemy.color = "orange";
-				enemy.size = ORANGE_SIZE;
-				let angle = Math.atan2(enemy.speedY, enemy.speedX);
-				enemy.speedX = Math.cos(angle) * ORANGE_SPEED;
-				enemy.speedY = Math.sin(angle) * ORANGE_SPEED;
-			  } else if (enemy.color === "orange") {
-				enemy.color = "red";
-				enemy.size = RED_SIZE;
-				let angle = Math.atan2(enemy.speedY, enemy.speedX);
-				enemy.speedX = Math.cos(angle) * RED_SPEED;
-				enemy.speedY = Math.sin(angle) * RED_SPEED;
-			  } else if (enemy.color === "red") {
-				sqrs.splice(i, 1);
+			if (debug) {
+			  let enemyFound = false;
+			  for (let i = 0; i < sqrs.length; i++) {
+				let enemy = sqrs[i];
+				if (mouseX >= enemy.x && mouseX <= enemy.x + enemy.size &&
+					mouseY >= enemy.y && mouseY <= enemy.y + enemy.size) {
+				  enemyFound = true;
+				  console.log("Evolved Enemy");
+				  if (enemy.color === "yellow") {
+					enemy.color = "orange";
+					enemy.size = ORANGE_SIZE;
+					let angle = Math.atan2(enemy.speedY, enemy.speedX);
+					enemy.speedX = Math.cos(angle) * ORANGE_SPEED;
+					enemy.speedY = Math.sin(angle) * ORANGE_SPEED;
+				  } else if (enemy.color === "orange") {
+					enemy.color = "red";
+					enemy.size = RED_SIZE;
+					let angle = Math.atan2(enemy.speedY, enemy.speedX);
+					enemy.speedX = Math.cos(angle) * RED_SPEED;
+					enemy.speedY = Math.sin(angle) * RED_SPEED;
+				  } else if (enemy.color === "red") {
+					console.log("Removed enemy");
+					sqrs.splice(i, 1);
+				  }
+				  break;
+				}
 			  }
-			  break;
 			}
-		  }
-		}
-		event.preventDefault();
+			event.preventDefault();
 		
 	  } else if (event.button === 2) { // Right click
 		// Debug-only: Check if orb is clicked to trigger debugSkipLevels(10)
@@ -1616,14 +1619,15 @@
 		  let dx = mouseX - orbCenterX;
 		  let dy = mouseY - orbCenterY;
 		  if (Math.sqrt(dx * dx + dy * dy) <= orb.size / 2) {
+			console.log("Jumped 10 levels");
 			debugSkipLevels(10);
 			event.preventDefault();
 			return;
 		  }
 		}
-		// Always allow right-click on player to reduce a life.
-		if (mouseX >= player.x && mouseX <= player.x + player.size &&
+		if (debug && mouseX >= player.x && mouseX <= player.x + player.size &&
 			mouseY >= player.y && mouseY <= player.y + player.size) {
+		  console.log("Life removed");
 		  player.lives--; 
 		  event.preventDefault();
 		  return;
@@ -1634,6 +1638,7 @@
 			let rock = rocks[i];
 			if (mouseX >= rock.x && mouseX <= rock.x + rock.width &&
 				mouseY >= rock.y && mouseY <= rock.y + rock.height) {
+			  console.log("Removed rock");
 			  rocks.splice(i, 1);
 			  event.preventDefault();
 			  return;
@@ -1643,6 +1648,7 @@
 			let m = mud[i];
 			if (mouseX >= m.x && mouseX <= m.x + m.width &&
 				mouseY >= m.y && mouseY <= m.y + m.height) {
+			  console.log("Removed mud");
 			  mud.splice(i, 1);
 			  event.preventDefault();
 			  return;
@@ -1652,6 +1658,7 @@
 			let enemy = sqrs[i];
 			if (mouseX >= enemy.x && mouseX <= enemy.x + enemy.size &&
 				mouseY >= enemy.y && mouseY <= enemy.y + enemy.size) {
+			  console.log("Devolved enemy");
 			  if (enemy.color === "red") {
 				enemy.color = "orange";
 				enemy.size = ORANGE_SIZE;
@@ -1665,6 +1672,7 @@
 				enemy.speedX = Math.cos(angle) * YELLOW_SPEED;
 				enemy.speedY = Math.sin(angle) * YELLOW_SPEED;
 			  } else if (enemy.color === "yellow") {
+			    console.log("Removed enemy");
 				sqrs.splice(i, 1);
 			  }
 			  event.preventDefault();
@@ -1672,6 +1680,7 @@
 			}
 		  }
 		  // Debug-only: If no enemy was clicked, spawn a new enemy.
+		  console.log("Spawned an enemy");
 		  let angle = getRandomAngle();
 		  let newEnemy = {
 			x: mouseX - YELLOW_SIZE / 2,
@@ -1692,7 +1701,7 @@
 			  mouseY >= player.y && mouseY <= player.y + player.size) {
 			shieldRings = [{}, {}, {}];
 			recalcShieldRadii();
-			console.log("Debug: Shield rings set to 3");
+			console.log("Shield set to 3");
 			event.preventDefault();
 			return;
 		  }
@@ -1703,6 +1712,7 @@
 			let dx = mouseX - orbCenterX;
 			let dy = mouseY - orbCenterY;
 			if (Math.sqrt(dx * dx + dy * dy) <= orb.size / 2) {
+			console.log("Cycled orb colour");
 			  if (orb.color === "green" && !orb.isHex) {
 				orb.color = "blue";
 				orb.isHex = false;
@@ -1724,6 +1734,7 @@
 			let enemy = sqrs[i];
 			if (mouseX >= enemy.x && mouseX <= enemy.x + enemy.size &&
 				mouseY >= enemy.y && mouseY <= enemy.y + enemy.size) {
+			  console.log("Removed all enemies");
 			  sqrs = [];
 			  event.preventDefault();
 			  return;
