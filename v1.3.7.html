@@ -261,7 +261,7 @@
     let controlsLocked = false;
 	let playerIsPink = false;
 	let cheatNoWrap = false;
-	let cheatCodeBuffer = "";
+	let cheatCodeBuffer = ""; //3712-Pink 2505-NoWrap
 	// Trail Effect
 	let playerTrail = [];
 	const TRAIL_LENGTH = 20;   
@@ -1216,6 +1216,10 @@
 		  if (player.y < 0) player.y = 0;
 		  if (player.y + player.size > canvas.height) player.y = canvas.height - player.size;
 		}
+			if (isCollidingWithrocks(player)) {
+			player.x = playerPrevX;
+			player.y = playerPrevY;
+		}
 
       
       if (orbActive &&
@@ -1665,7 +1669,7 @@
     }
     
     restartGame();
-    requestAnimationFrame(gameLoop);2505
+    requestAnimationFrame(gameLoop);
     
     setInterval(resetAllEnemySpeeds, 1000);
     
