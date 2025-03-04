@@ -1,0 +1,1982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=800, initial-scale=1.0" />
+  <title>A Game of Squares</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: #222;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    /* Title Styles */
+    #title {
+      text-align: center;
+      margin-top: 20px;
+      margin-bottom: 10px;
+      width: 800px;
+    }
+    #titleTop {
+      color: grey;
+      font-size: 24px;
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+    #titleBottom {
+      color: white;
+      font-size: 48px;
+      font-weight: bold;
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+    /* HUD Container */
+    #hudContainer {
+      width: 800px;
+      background-color: #333;
+      border-radius: 8px;
+      padding: 5px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: Arial, sans-serif;
+	  position: relative;
+    }
+	#hudTriangles {
+	  position: absolute;
+	  right: 180px;  /* adjust this value as needed so it sits nicely between Level and High Score */
+	  top: 50%;
+	  transform: translateY(-50%);
+	  display: flex;
+	  gap: 10px;  /* gap between triangles */
+	}
+
+	/* Creating an equilateral triangle pointing upward. */
+	.triangle {
+	  width: 41px; /* approximates the base of an equilateral triangle with 35px height */
+	  height: 35px;
+	  background-color: #202020;
+	  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+	  box-shadow: inset -10px -5px 5px rgba(0, 0, 0, 0.5); /* adjust shadow as needed */
+	}
+    /* HUD elements */
+    .hud-label {
+      color: grey;
+      font-size: 20px;
+    }
+    /* Lives: Fixed blue circle that stays the same size */
+    #hudLife {
+      background-color: blue;
+      color: white;
+      font-size: 20px;
+      font-weight: bold;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      text-align: center;
+      line-height: 40px;
+      margin-left: 5px;
+    }
+    /* Center HUD */
+    #hudLevel {
+      color: white;
+      font-size: 26px;
+      font-weight: bold;
+      margin: 0 2px 0 0;
+    }
+    /* Level progression */
+    #hudLevelProg {
+      background-color: green;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      text-align: center;
+      line-height: 40px;
+      margin-left: 2px;
+      display: inline-block;
+      position: relative;
+    }
+    /* The tiny indicator inside the green circle */
+    #hudorbIndicator {
+      position: absolute;
+      bottom: 2px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 8px;
+      height: 8px;
+      background-color: grey;
+      border-radius: 50%;
+    }
+    /* High Score: fixed width for the number */
+    #hudHighScore {
+      color: white;
+      font-size: 20px;
+      font-weight: bold;
+      width: 30px;
+      text-align: center;
+      display: inline-block;
+      margin-left: 1px;
+    }
+    /* Containers for left, center, and right parts */
+    #hudLeft, #hudCenter, #hudRight {
+      display: flex;
+      align-items: center;
+    }
+    /* Game container and canvas */
+    #gameContainer {
+      position: relative;
+      width: 800px;
+      height: 600px;
+      margin-top: 10px;
+    }
+    canvas {
+      background-color: #111;
+      display: block;
+    }
+    /* Overlay for in-canvas messages */
+    #messageOverlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: Arial, sans-serif;
+      font-size: 48px;
+      font-weight: bold;
+      z-index: 5;
+      pointer-events: none;
+      text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+      text-align: center;
+    }
+	#bottomBar {
+	  width: 800px;
+	  display: flex;
+	  justify-content: space-between;
+	  align-items: center;
+	  font-family: Arial, sans-serif;
+	  font-size: 12px;
+	  margin-top: 2px;
+	}
+
+	#debugModeIndicator {
+	  text-align: left;
+	  color: blue;
+	}
+
+	#devVersion {
+	  text-align: right;
+	  color: #2a2a2a;
+	}
+  </style>
+</head>
+<body>
+  <div id="title">
+    <div id="titleTop">Dave Longhurst presents</div>
+    <div id="titleBottom">A Game of Squares</div>
+  </div>
+	<div id="hudContainer">
+	  <div id="hudLeft">
+		<span class="hud-label">Lives:</span>
+		<span id="hudLife">1</span>
+	  </div>
+	  <div id="hudCenter">
+		<span id="hudLevel">Level 1</span>
+		<span id="hudLevelProg">0/5
+		  <div id="hudorbIndicator"></div>
+		</span>
+	  </div>
+	  <!-- New container for triangles -->
+	  <div id="hudTriangles">
+		<div class="triangle"></div>
+		<div class="triangle"></div>
+		<div class="triangle"></div>
+	  </div>
+	  <div id="hudRight">
+		<span class="hud-label">High Score:</span>
+		<span id="hudHighScore">1</span>
+	  </div>
+	</div>
+  <div id="gameContainer">
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="messageOverlay"></div>
+  </div>
+  <!-- Debug Mode Indicator & Version Number -->
+  <div id="bottomBar">
+    <div id="debugModeIndicator"></div>
+    <div id="devVersion">v1.3.7</div>
+  </div>
+  <script>
+    let debug = 1;
+	if (debug) {
+	  document.getElementById("debugModeIndicator").textContent = "Debug Mode";
+	} else {
+	  document.getElementById("debugModeIndicator").textContent = "";
+	}
+    let highScore = 1;
+    let gameOverPrompted = false;
+    const PURPLE_COLOR = "#7F00FF";
+    let purpleorbUsed = false;
+    
+    // Use fixed shield rings (up to 3).
+    let shieldRings = [];
+    // Flag to prevent awarding multiple shields in one temporary purple cycle.
+    let shieldAwardedForCurrentTempPurple = false;
+    // Indicates that the temporary purple effect is active.
+    let tempPurpleActive = false;
+    
+    // Constants for shield ring drawing.
+    // Desired radii: first ring = 20, second = 25, third = 30.
+    const desiredRadii = [20, 25, 30];
+    const shieldThickness = 3;  // Stroke width is 3 pixels.
+    
+    // Recalculate each shield ring's radius based on its index.
+    function recalcShieldRadii() {
+      for (let i = 0; i < shieldRings.length; i++) {
+        shieldRings[i].ringRadius = desiredRadii[i];
+      }
+    }
+    
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    canvas.addEventListener('contextmenu', function(event) {
+      event.preventDefault();
+    });
+    const messageOverlay = document.getElementById("messageOverlay");
+    const hudLife = document.getElementById("hudLife");
+    const hudLevelElem = document.getElementById("hudLevel");
+    const hudLevelProg = document.getElementById("hudLevelProg");
+    const hudorbIndicator = document.getElementById("hudorbIndicator");
+    const hudHighScore = document.getElementById("hudHighScore");
+    const zoneSize = 250;
+    let tryAgainAvailable = false;
+    
+    let orbActive = true;
+    let manualPause = false;
+    let manualPauseTimer = null;
+    let manualPauseLocked = false;
+    let controlsLocked = false;
+	let playerIsPink = false;
+	let cheatNoWrap = false;
+	let cheatCodeBuffer = "";
+	// Trail Effect
+	let playerTrail = [];
+	const TRAIL_LENGTH = 20;   
+	
+    const YELLOW_SPEED = 1, ORANGE_SPEED = 2, RED_SPEED = 4;
+    const YELLOW_SIZE = 20, ORANGE_SIZE = 25, RED_SIZE = 30;
+    
+    const safeMargin = 30;
+    function isTooClose(a, b, margin) {
+      return (
+        a.x < b.x + b.size + margin &&
+        a.x + a.size > b.x - margin &&
+        a.y < b.y + b.size + margin &&
+        a.y + a.size > b.y - margin
+      );
+    }
+    function getValidSpawnPosition(entitySize, existingEntities = []) {
+      let x, y, valid = false;
+      let candidate = { x: 0, y: 0, size: entitySize };
+      while (!valid) {
+        x = Math.random() * (canvas.width - entitySize);
+        y = Math.random() * (canvas.height - entitySize);
+        candidate.x = x;
+        candidate.y = y;
+        valid = true;
+        for (let ent of existingEntities) {
+          if (isTooClose(candidate, ent, safeMargin)) {
+            valid = false;
+            break;
+          }
+        }
+      }
+      return { x, y };
+    }
+    // New function for boss fight respawn/spawn positioning.
+    function getValidBossFightSpawnPosition(entitySize, obstacles) {
+      let x, y, valid = false;
+      let candidate;
+      while (!valid) {
+        // Ensure the spawn is within the canvas excluding the 20px moat border.
+        x = 20 + Math.random() * (canvas.width - entitySize - 40);
+        y = 20 + Math.random() * (canvas.height - entitySize - 40);
+        candidate = { x: x, y: y, size: entitySize };
+        valid = true;
+        for (let obs of obstacles) {
+          if (isTooClose(candidate, obs, safeMargin)) {
+            valid = false;
+            break;
+          }
+        }
+      }
+      return { x, y };
+    }
+    function getValidEnemySpawnPosition(entitySize) {
+      let pos;
+      let tries = 0;
+      do {
+        pos = getValidSpawnPosition(entitySize, rocks.concat(sqrs, [player]));
+        tries++;
+      } while (
+        rocks.some(obs =>
+          pos.x < obs.x + obs.size &&
+          pos.x + entitySize > obs.x &&
+          pos.y < obs.y + obs.size &&
+          pos.y + entitySize > obs.y
+        ) && tries < 1000
+      );
+      return pos;
+    }
+    function getRandomAngle() {
+      return Math.random() * 2 * Math.PI;
+    }
+	// Helper: Clamp a value between min and max.
+	function clamp(val, min, max) {
+	  return Math.max(min, Math.min(max, val));
+	}
+
+	// Helper: Compute reflection vector.
+	function reflectVector(vx, vy, nx, ny) {
+	  let dot = vx * nx + vy * ny;
+	  return { vx: vx - 2 * dot * nx, vy: vy - 2 * dot * ny };
+	}
+
+	// Helper: Collision between circle and rectangle.
+	function circleRectCollision(cx, cy, radius, rx, ry, rw, rh) {
+	  let closestX = clamp(cx, rx, rx + rw);
+	  let closestY = clamp(cy, ry, ry + rh);
+	  let dx = cx - closestX;
+	  let dy = cy - closestY;
+	  return (dx * dx + dy * dy) < (radius * radius);
+	}
+
+	// Helper: Collision between circle and player's rectangle.
+	function circlePlayerCollision(cx, cy, radius, player) {
+	  return circleRectCollision(cx, cy, radius, player.x, player.y, player.size, player.size);
+	}
+
+	// Helper: Collision between circle (boss shot) and a boss rock (rectangle).
+	function bossShotRockCollision(shot, rock) {
+	  return circleRectCollision(shot.x, shot.y, shot.size / 2, rock.x, rock.y, rock.width, rock.height);
+	}
+
+	// Helper: Returns a random boss shot interval between 1 and 3 seconds.
+	function getRandomBossShotInterval() {
+	  return 1000 + Math.random() * 2000;
+	}
+
+	// Schedules next boss shot interval.
+	function scheduleNextBossShot() {
+	  lastBossShotTime = Date.now();
+	  bossShotInterval = getRandomBossShotInterval();
+	}
+    
+    const basePlayerSpeed = 5;
+    let player = { x: 50, y: 50, size: 20, speed: basePlayerSpeed, lives: 1, level: 1 };
+    let progress = 0;
+    let orb = { x: 200, y: 200, size: 20, color: "green", isHex: false };
+    let sqrs = [];
+    let rocks = [];
+    let mud = [];
+	// New boss fight globals
+	let bossFight = false;
+	let boss = null;
+	let bossRocks = [];
+	// New boss shot globals
+	let bossShots = [];
+	let lastBossShotTime = Date.now();
+	let bossShotInterval = getRandomBossShotInterval(); // initial interval
+    // Flag to indicate that the boss fight is waiting for the player to move before unpausing.
+    let bossWaitForInput = false;
+    
+    let paused = true;
+    let levelPaused = true;
+    let hitCooldown = false;
+    let gameOver = false;
+    let hasScored = false;
+    
+    function isIntersecting(entity, zone) {
+      return !(entity.x + entity.size < zone.x ||
+               entity.x > zone.x + zone.width ||
+               entity.y + entity.size < zone.y ||
+               entity.y > zone.y + zone.height);
+    }
+    function isCollidingWithrocks(entity) {
+      for (let obs of rocks) {
+        if (
+          entity.x < obs.x + obs.width &&
+          entity.x + entity.size > obs.x &&
+          entity.y < obs.y + obs.height &&
+          entity.y + entity.size > obs.y
+        ) {
+          return true;
+        }
+      }
+      return false;
+    }
+	
+	function isCollidingWithBossRocks(entity) {
+	  for (let obs of bossRocks) {
+		if (
+		  entity.x < obs.x + obs.width &&
+		  entity.x + entity.size > obs.x &&
+		  entity.y < obs.y + obs.height &&
+		  entity.y + entity.size > obs.y
+		) {
+		  return true;
+		}
+	  }
+	  return false;
+	}
+    
+    function getRandomCornerPattern() {
+      let pattern;
+      do {
+        pattern = [
+          Math.random() < 0.5,
+          Math.random() < 0.5,
+          Math.random() < 0.5,
+          Math.random() < 0.5
+        ];
+      } while (pattern.filter(c => c).length === 0 || pattern.filter(c => c).length === 4);
+      return pattern;
+    }
+    
+    function spawnmud() {
+      mud = [];
+      if (player.level === 1) return;
+      let count = 1;
+      if (player.level >= 50) count = 5;
+      else if (player.level >= 40) count = 4;
+      else if (player.level >= 30) count = 3;
+      else if (player.level >= 20) count = 2;
+      count = Math.min(count, 5);
+      for (let i = 0; i < count; i++) {
+        mud.push({
+          x: Math.random() * (canvas.width - zoneSize),
+          y: Math.random() * (canvas.height - zoneSize),
+          width: zoneSize,
+          height: zoneSize,
+          color: "#5D3A1A"
+        });
+      }
+    }
+    
+    function spawnrocks() {
+      rocks = [];
+      if (player.level === 1) return;
+      let count = Math.floor(Math.random() * Math.floor(player.level / 2)) + 1;
+      count = Math.min(count, 10);
+      const shapes = [
+        { width: 50, height: 50 },
+        { width: 50, height: 100 },
+        { width: 100, height: 50 },
+        { width: 75, height: 75 }
+      ];
+      for (let i = 0; i < count; i++) {
+        let shape = shapes[Math.floor(Math.random() * shapes.length)];
+        let rockSize = Math.max(shape.width, shape.height);
+        let pos = getValidSpawnPosition(rockSize, rocks.concat([player]));
+        let corners = getRandomCornerPattern();
+        rocks.push({ 
+          x: pos.x, 
+          y: pos.y, 
+          width: shape.width, 
+          height: shape.height, 
+          size: rockSize, 
+          color: "#222",
+          corners: corners
+        });
+      }
+    }
+    
+	function spawnsqrs() {
+	  sqrs = [];
+	  let redCount = Math.floor(player.level / 25);
+	  let orangeCount = Math.floor(player.level / 10);
+	  let yellowCount = player.level - (redCount + orangeCount);
+	  yellowCount = Math.min(yellowCount, 50);
+	  let totalEnemies = redCount + orangeCount + yellowCount;
+	  // Cap totalEnemies
+	  totalEnemies = Math.min(totalEnemies, 25);
+	  
+	  for (let i = 0; i < totalEnemies; i++) {
+		let enemy = { x: 0, y: 0, size: YELLOW_SIZE, speedX: 0, speedY: 0, color: "yellow" };
+		if (i < redCount) {
+		  enemy.color = "red";
+		  enemy.size = RED_SIZE;
+		} else if (i < redCount + orangeCount) {
+		  enemy.color = "orange";
+		  enemy.size = ORANGE_SIZE;
+		} else {
+		  enemy.color = "yellow";
+		  enemy.size = YELLOW_SIZE;
+		}
+		let pos = getValidEnemySpawnPosition(enemy.size);
+		enemy.x = pos.x;
+		enemy.y = pos.y;
+		let angle = getRandomAngle();
+		if (enemy.color === "red") {
+		  enemy.speedX = Math.cos(angle) * RED_SPEED;
+		  enemy.speedY = Math.sin(angle) * RED_SPEED;
+		} else if (enemy.color === "orange") {
+		  enemy.speedX = Math.cos(angle) * ORANGE_SPEED;
+		  enemy.speedY = Math.sin(angle) * ORANGE_SPEED;
+		} else {
+		  enemy.speedX = Math.cos(angle) * YELLOW_SPEED;
+		  enemy.speedY = Math.sin(angle) * YELLOW_SPEED;
+		}
+		sqrs.push(enemy);
+	  }
+	}
+    
+    function spawnorb() {
+	  if (bossFight) return;  // Prevent orb spawning during boss fights.
+      orbActive = true;
+      const minDistance = 250;
+      let pos, distance;
+      const playerCenterX = player.x + player.size / 2;
+      const playerCenterY = player.y + player.size / 2;
+      do {
+        pos = getValidSpawnPosition(orb.size, rocks.concat(sqrs, [player]));
+        const orbCenterX = pos.x + orb.size / 2;
+        const orbCenterY = pos.y + orb.size / 2;
+        const dx = orbCenterX - playerCenterX;
+        const dy = orbCenterY - playerCenterY;
+        distance = Math.sqrt(dx * dx + dy * dy);
+      } while (distance < minDistance);
+      orb.x = pos.x;
+      orb.y = pos.y;
+      if (progress === 4) {
+        if (player.level % 10 === 0) {
+          // For a hex orb on every 10th level.
+          orb.color = "blue"; // hex orb will be blue but drawn as a hexagon
+          orb.isHex = true;
+        } else {
+          orb.color = "blue";
+          orb.isHex = false;
+        }
+      } else if (progress >= 1 && progress <= 3 && !purpleorbUsed) {
+        if (Math.random() < 0.1) {
+          orb.color = PURPLE_COLOR;
+          purpleorbUsed = true;
+        } else {
+          orb.color = "green";
+        }
+        orb.isHex = false;
+      } else {
+        orb.color = "green";
+        orb.isHex = false;
+      }
+    }
+
+	// Function to fire a boss shot (or burst) based on probabilities and limits.
+	function fireBossShot() {
+	  // Only fire if boss is rotating (i.e. bossFight is active and not paused)
+	  if (!bossFight || paused) return;
+	  
+	  // Decide shot type based on probability:
+	  // 50% chance for orange, 25% for red, 25% for green (or blue if progress>=9)
+	  let rand = Math.random();
+	  let shotType;
+	  if (rand < 0.5) {
+		shotType = "orange";
+	  } else if (rand < 0.75) {
+		shotType = "red";
+	  } else {
+		shotType = "green";  // will convert to blue later if progress>=9
+	  }
+	  
+	  // Check limits:
+	  // Only 1 green/blue shot allowed.
+	  let greenCount = bossShots.filter(s => s.type === "green" || s.type === "blue").length;
+	  if (shotType === "green" && greenCount >= 1) {
+		shotType = "orange";
+	  }
+	  // Only 2 red shots allowed.
+	  let redCount = bossShots.filter(s => s.type === "red").length;
+	  if (shotType === "red" && redCount >= 2) {
+		shotType = "orange";
+	  }
+	  
+	  // For green shots, if progress >= 9 then they become blue.
+	  if (shotType === "green" && progress >= 9) {
+		shotType = "blue";
+	  }
+	  
+	  // Determine firing position: assume boss center.
+	  let bossCenterX = boss.x + boss.size / 2;
+	  let bossCenterY = boss.y + boss.size / 2;
+	  
+	  // For orange shots, further choose one of four styles.
+		if (shotType === "orange") {
+		  let r = Math.random();
+		  if (r < 0.1) {
+			// Large: 10% chance.
+			fireBossShotOrange("large", bossCenterX, bossCenterY);
+		  } else if (r < 0.4) {
+			// Line: next 30% chance.
+			for (let i = 0; i < 5; i++) {
+			  setTimeout(() => {
+				fireBossShotOrange("single", bossCenterX, bossCenterY);
+			  }, i * 50);
+			}
+		  } else if (r < 0.6) {
+			// Spray: next 20% chance.
+			let baseAngle = Math.atan2(player.y + player.size/2 - bossCenterY, player.x + player.size/2 - bossCenterX);
+			let angles = [
+			  baseAngle,
+			  baseAngle + 5 * Math.PI/180,
+			  baseAngle - 5 * Math.PI/180,
+			  baseAngle + 10 * Math.PI/180,
+			  baseAngle - 10 * Math.PI/180
+			];
+			angles.forEach(angle => {
+			  fireBossShotOrange("single", bossCenterX, bossCenterY, angle);
+			});
+		  } else {
+			// Single: remaining 40% chance.
+			fireBossShotOrange("single", bossCenterX, bossCenterY);
+		  }
+		}
+	  
+	  else if (shotType === "red") {
+		// Fire a red shot with a random ±30° offset relative to the player.
+		let baseAngle = Math.atan2(player.y + player.size/2 - bossCenterY, player.x + player.size/2 - bossCenterX);
+		let offset = (Math.random() < 0.5 ? -30 : 30) * Math.PI/180;
+		let angle = baseAngle + offset;
+		let speed = 4.5;
+		let shot = {
+		  type: "red",
+		  x: bossCenterX,
+		  y: bossCenterY,
+		  vx: Math.cos(angle) * speed,
+		  vy: Math.sin(angle) * speed,
+		  size: 10, // boss shot diameter (half the orb)
+		  bounceCount: 0,
+		  firedTime: Date.now(), // for tracking phase
+		  homing: false  // will switch to homing after 0.5-1 sec
+		};
+		// Random straight travel duration between 500 and 1000 ms.
+		shot.straightDuration = 500 + Math.random() * 500;
+		bossShots.push(shot);
+	  }
+	  else if (shotType === "green" || shotType === "blue") {
+		// Fire a green/blue shot at speed 3 in a random direction.
+		let angle = getRandomAngle();
+		let shot = {
+		  type: (shotType === "green" ? "green" : "blue"),
+		  x: bossCenterX,
+		  y: bossCenterY,
+		  vx: Math.cos(angle) * 3,
+		  vy: Math.sin(angle) * 3,
+		  size: 10,
+		  bounceCount: 0
+		};
+		bossShots.push(shot);
+	  }
+	  scheduleNextBossShot();
+	}
+
+	// Helper function for firing an orange boss shot.
+	function fireBossShotOrange(style, startX, startY, angle) {
+	  let speed, size;
+	  if (style === "large") {
+		speed = 3;
+		size = 20; // twice the normal shot size
+	  } else { // single
+		speed = 4.5;
+		size = 10;
+	  }
+	  // If angle not provided, fire directly at player.
+	  if (angle === undefined) {
+		angle = Math.atan2(player.y + player.size/2 - startX, player.x + player.size/2 - startX);
+		// Alternatively, use: 
+		angle = Math.atan2(player.y + player.size/2 - startY, player.x + player.size/2 - startX);
+	  }
+	  let shot = {
+		type: "orange",
+		style: style,
+		x: startX,
+		y: startY,
+		vx: Math.cos(angle) * speed,
+		vy: Math.sin(angle) * speed,
+		size: size,
+		bounceCount: 0
+	  };
+	  bossShots.push(shot);
+	}
+	
+	// Update boss shots: movement, collision with boss rocks, shield rings, moat, and player.
+	function updateBossShots() {
+	  for (let i = bossShots.length - 1; i >= 0; i--) {
+		let shot = bossShots[i];
+		if (!shot) continue;  // Skip undefined entries.
+		
+		// For red shots, check if it's time to switch to homing.
+		if (shot.type === "red" && !shot.homing) {
+		  let elapsed = Date.now() - shot.firedTime;
+		  if (elapsed >= shot.straightDuration) {
+			shot.homing = true;
+		  }
+		}
+		// If homing, adjust velocity to chase the player.
+		if (shot.type === "red" && shot.homing) {
+		  let centerPlayerX = player.x + player.size/2;
+		  let centerPlayerY = player.y + player.size/2;
+		  let dx = centerPlayerX - shot.x;
+		  let dy = centerPlayerY - shot.y;
+		  let dist = Math.sqrt(dx*dx + dy*dy);
+		  if (dist > 0) {
+			shot.vx = (dx / dist) * 4.5;
+			shot.vy = (dy / dist) * 4.5;
+		  }
+		}
+		
+		// Update position.
+		shot.x += shot.vx;
+		shot.y += shot.vy;
+		
+		// Check collision with boss moat (20px border)
+		if (shot.x - shot.size/2 < 20 || shot.y - shot.size/2 < 20 ||
+			shot.x + shot.size/2 > canvas.width - 20 || shot.y + shot.size/2 > canvas.height - 20) {
+		  shot.remove = true;
+		  continue;
+		}
+		
+		// Check collision with boss rocks.
+		for (let j = bossRocks.length - 1; j >= 0; j--) {
+		  let rock = bossRocks[j];
+		  if (bossShotRockCollision(shot, rock)) {
+			if (shot.type === "red") {
+			  shot.remove = true;
+			  break;
+			} else if (shot.type === "orange") {
+			  if (shot.style === "large") {
+				shot.remove = true;
+				bossRocks.splice(j, 1);
+				break;
+			  } else {
+				let closestX = clamp(shot.x, rock.x, rock.x + rock.width);
+				let closestY = clamp(shot.y, rock.y, rock.y + rock.height);
+				let dx = shot.x - closestX;
+				let dy = shot.y - closestY;
+				let mag = Math.sqrt(dx*dx + dy*dy);
+				if (mag > 0) {
+				  let nx = dx / mag;
+				  let ny = dy / mag;
+				  let reflected = reflectVector(shot.vx, shot.vy, nx, ny);
+				  shot.vx = reflected.vx;
+				  shot.vy = reflected.vy;
+				  shot.bounceCount++;
+				}
+			  }
+			} else if (shot.type === "green" || shot.type === "blue") {
+			  let closestX = clamp(shot.x, rock.x, rock.x + rock.width);
+			  let closestY = clamp(shot.y, rock.y, rock.y + rock.height);
+			  let dx = shot.x - closestX;
+			  let dy = shot.y - closestY;
+			  let mag = Math.sqrt(dx*dx + dy*dy);
+			  if (mag > 0) {
+				let nx = dx / mag;
+				let ny = dy / mag;
+				let reflected = reflectVector(shot.vx, shot.vy, nx, ny);
+				shot.vx = reflected.vx;
+				shot.vy = reflected.vy;
+				shot.bounceCount++;
+			  }
+			}
+		  }
+		}
+		
+		// Remove shot if bounce count exceeds 5.
+		if (shot.bounceCount > 5) {
+		  shot.remove = true;
+		}
+		
+		// Check collision with shield rings (only for red and orange shots).
+		if (shot.type !== "green" && shot.type !== "blue") {
+		  let centerPlayerX = player.x + player.size/2;
+		  let centerPlayerY = player.y + player.size/2;
+		  let distToPlayer = Math.sqrt((shot.x - centerPlayerX)**2 + (shot.y - centerPlayerY)**2);
+		  for (let s = shieldRings.length - 1; s >= 0; s--) {
+			let ring = shieldRings[s];
+			if (Math.abs(distToPlayer - ring.ringRadius) < (shot.size/2 + 5)) {
+			  shot.remove = true;
+			  shieldRings.splice(s, 1);
+			  break;
+			}
+		  }
+		}
+		
+		// Check collision with player.
+		if (circlePlayerCollision(shot.x, shot.y, shot.size/2, player)) {
+		  if (shot.type === "green") {
+			orbActive = false;
+			progress++;
+			shot.remove = true;
+			setTimeout(spawnorb, 1000);
+		  }
+		  else if (shot.type === "blue") {
+			orbActive = false;
+			player.lives++;
+			shot.remove = true;
+			bossFight = false;
+			boss = null;
+			bossRocks = [];
+			bossShots = [];
+			progress = 0;
+			player.level++;
+			purpleorbUsed = false;
+			spawnsqrs();
+			spawnmud();
+			spawnrocks();
+			levelPaused = true;
+			paused = true;
+			messageOverlay.style.color = "blue";
+			messageOverlay.textContent = `Level ${player.level}`;
+			controlsLocked = true;
+			setTimeout(() => { controlsLocked = false; }, 1000);
+			spawnorb();
+		  }
+		  else if (shot.type === "red" || shot.type === "orange") {
+			shot.remove = true;
+			handlePlayerHit();
+		  }
+		}
+	  }
+	  bossShots = bossShots.filter(s => s && !s.remove);
+	}
+
+	// Draw boss shots.
+	function drawBossShots() {
+	  bossShots.forEach(shot => {
+		ctx.beginPath();
+		ctx.arc(shot.x, shot.y, shot.size/2, 0, Math.PI*2);
+		if (shot.type === "orange") {
+		  ctx.fillStyle = "orange";
+		} else if (shot.type === "red") {
+		  ctx.fillStyle = "red";
+		} else if (shot.type === "green") {
+		  ctx.fillStyle = "green";
+		} else if (shot.type === "blue") {
+		  ctx.fillStyle = "blue";
+		}
+		ctx.fill();
+	  });
+	}
+    
+    // When processing orb collision, if the orb is purple or hex, handle accordingly.
+    function processorbCollision() {
+      orbActive = false;
+      resetAllEnemySpeeds();
+      if (orb.isHex) {
+        // Set progress to 5 (switching from x/5 to x/10 style) then trigger boss fight.
+        progress = 5;
+        // Remove the orb and trigger boss fight.
+        initiateBossFight();
+      } else if (orb.color === PURPLE_COLOR) {
+        tempPurpleActive = true;
+        sqrs.forEach(enemy => {
+          if (!enemy.temporarilyPurple) {
+            enemy.originalColor = enemy.color;
+            enemy.color = PURPLE_COLOR;
+            enemy.temporarilyPurple = true;
+          }
+        });
+        hudorbIndicator.style.backgroundColor = PURPLE_COLOR;
+        setTimeout(() => {
+          let flashCount = 0;
+          const flashInterval = setInterval(() => {
+            flashCount++;
+            sqrs.forEach(enemy => {
+              if (enemy.temporarilyPurple) {
+                enemy.color = (enemy.color === PURPLE_COLOR) ? "#E6E6FA" : PURPLE_COLOR;
+              }
+            });
+            if (flashCount >= 32) {
+              clearInterval(flashInterval);
+            }
+          }, 62);
+        }, 8000);
+        setTimeout(() => {
+          sqrs.forEach(enemy => {
+            if (enemy.temporarilyPurple) {
+              enemy.color = enemy.originalColor || enemy.color;
+              delete enemy.temporarilyPurple;
+              delete enemy.originalColor;
+            }
+          });
+          tempPurpleActive = false;
+          shieldAwardedForCurrentTempPurple = false;
+        }, 10000);
+        setTimeout(spawnorb, 1000);
+      } else if (orb.color === "blue" && !orb.isHex) {
+        progress++;
+        player.lives++;
+        hasScored = true;
+        if (progress >= 5) {
+	      // Disable purple power at the start of the new level
+		  tempPurpleActive = false;
+		  purpleorbUsed = false;
+		  playerTrail = []; // Clear any existing purple trail
+          hudorbIndicator.style.backgroundColor = "grey";
+          player.level++;
+          purpleorbUsed = false;
+          spawnsqrs();
+          spawnmud();
+          spawnrocks();
+          progress = 0;
+          levelPaused = true;
+          paused = true;
+          messageOverlay.style.color = "blue";
+          messageOverlay.textContent = `Level ${player.level}`;
+          controlsLocked = true;
+          setTimeout(() => { controlsLocked = false; }, 1000);
+          spawnorb();
+        } else {
+          setTimeout(spawnorb, 1000);
+        }
+      } else { // Green orb
+        progress++;
+        if (progress >= 5) {
+          hudorbIndicator.style.backgroundColor = "grey";
+          player.level++;
+          purpleorbUsed = false;
+          spawnsqrs();
+          spawnmud();
+          spawnrocks();
+          progress = 0;
+          levelPaused = true;
+          paused = true;
+          messageOverlay.style.color = "blue";
+          messageOverlay.textContent = `Level ${player.level}`;
+          controlsLocked = true;
+          setTimeout(() => { controlsLocked = false; }, 1000);
+          spawnorb();
+        } else {
+          setTimeout(spawnorb, 1000);
+        }
+      }
+    }
+    
+    function resetAllEnemySpeeds() {
+      sqrs.forEach(enemy => {
+        if (enemy.color === "red") {
+          enemy.speedX = Math.sign(enemy.speedX) * RED_SPEED;
+          enemy.speedY = Math.sign(enemy.speedY) * RED_SPEED;
+        } else if (enemy.color === "orange") {
+          enemy.speedX = Math.sign(enemy.speedX) * ORANGE_SPEED;
+          enemy.speedY = Math.sign(enemy.speedY) * ORANGE_SPEED;
+        } else {
+          enemy.speedX = Math.sign(enemy.speedX) * YELLOW_SPEED;
+          enemy.speedY = Math.sign(enemy.speedY) * YELLOW_SPEED;
+        }
+      });
+    }
+    
+    function updateHUD() {
+      hudLife.textContent = player.lives;
+      hudLevelElem.textContent = "Level " + player.level;
+      // Display progress with denominator 10 during boss fight, else 5.
+      if (bossFight) {
+        hudLevelProg.textContent = `${progress}/10`;
+      } else {
+        hudLevelProg.textContent = `${progress}/5`;
+      }
+      hudLevelProg.appendChild(hudorbIndicator);
+      if (player.level > highScore) {
+        highScore = player.level;
+      }
+      hudHighScore.textContent = highScore;
+    }
+    
+    // Modified handlePlayerHit to factor boss fight obstacles.
+    function handlePlayerHit() {
+      if (!paused) {
+        player.lives--;
+		// Clear shield rings if killed by Boss or Moat etc
+		shieldRings = []
+        if (player.lives >= 1) {
+          paused = true;
+          hitCooldown = true;
+          messageOverlay.style.color = "orange";
+          messageOverlay.textContent = "Life Lost";
+          let pos;
+          if (bossFight) {
+            let obstacles = [];
+            if (boss) obstacles.push({ x: boss.x, y: boss.y, size: boss.size });
+            bossRocks.forEach(br => {
+              obstacles.push({ x: br.x, y: br.y, size: br.size });
+            });
+            pos = getValidBossFightSpawnPosition(player.size, obstacles);
+          } else {
+            pos = getValidSpawnPosition(player.size, rocks.concat(sqrs, [orb]));
+          }
+          player.x = pos.x;
+          player.y = pos.y;
+          setTimeout(() => { hitCooldown = false; }, 1000);
+        }
+		if (bossFight) {
+		  bossShots = [];
+		}
+      }
+    }
+    
+    // New function: Draw a rotated hexagon given center, size, rotation and color.
+    function drawRotatedHexagon(cx, cy, size, rotation, color) {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(rotation);
+      ctx.beginPath();
+      let r = size / 2;
+      for (let i = 0; i < 6; i++) {
+        let angle = i * Math.PI / 3;
+        let x = r * Math.cos(angle);
+        let y = r * Math.sin(angle);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.restore();
+    }
+	// Draw triangle centered at (cx,cy).
+	function drawTriangle(cx, cy, width, height, color) {
+	  ctx.beginPath();
+	  ctx.moveTo(cx, cy - height / 2);         // Top vertex
+	  ctx.lineTo(cx - width / 2, cy + height / 2); // Bottom left
+	  ctx.lineTo(cx + width / 2, cy + height / 2); // Bottom right
+	  ctx.closePath();
+	  ctx.fillStyle = color;
+	  ctx.fill();
+	}
+    
+    // New function: Initiate boss fight by clearing entities, repositioning the player,
+    // and creating the boss, bossMoat (drawn as border) and bossRocks.
+    function initiateBossFight() {
+      bossFight = true;
+      // Destroy all enemies and obstacles.
+      sqrs = [];
+      rocks = [];
+      mud = [];
+      // Create boss in the center.
+      boss = {
+        x: canvas.width / 2 - 50,
+        y: canvas.height / 2 - 50,
+        size: 100,
+        color: "yellow",
+        rotation: 0
+      };
+      // Create bossRocks.
+      bossRocks = [];
+      let numBossRocks = Math.floor(Math.random() * 6) + 5; // between 5 and 10
+      let bossCenterX = canvas.width / 2;
+      let bossCenterY = canvas.height / 2;
+      let sizes = [{w:25, h:50}, {w:25, h:75}, {w:50, h:25}, {w:75, h:25}];
+      for (let i = 0; i < numBossRocks; i++) {
+        let angle = Math.random() * 2 * Math.PI;
+        let distance = 175 + Math.random() * (225 - 175);
+        let rockPosX = bossCenterX + distance * Math.cos(angle);
+        let rockPosY = bossCenterY + distance * Math.sin(angle);
+        let chosen = sizes[Math.floor(Math.random() * sizes.length)];
+        let corners = getRandomCornerPattern();
+        let bossRock = {
+          x: rockPosX,
+          y: rockPosY,
+          width: chosen.w,
+          height: chosen.h,
+          size: Math.max(chosen.w, chosen.h),
+          color: "#222",
+          corners: corners
+        };
+        bossRocks.push(bossRock);
+      }
+      // Reposition the player so he doesn't start overlapping boss elements.
+      let obstacles = [];
+      obstacles.push({ x: boss.x, y: boss.y, size: boss.size });
+      bossRocks.forEach(br => { obstacles.push({ x: br.x, y: br.y, size: br.size }); });
+      let pos = getValidBossFightSpawnPosition(player.size, obstacles);
+      player.x = pos.x;
+      player.y = pos.y;
+      
+      // Pause game and display "Boss Fight" until the player moves.
+      paused = true;
+      levelPaused = true;
+      bossWaitForInput = true;
+      messageOverlay.style.color = "orange";
+      messageOverlay.textContent = "Boss Fight";
+      // Removed controlsLocked here so movement keys can unpause.
+    }
+    
+    function update() {
+      // Save player's previous position for collision rollback.
+      let playerPrevX = player.x;
+      let playerPrevY = player.y;
+      
+      if (player.lives < 1) {
+        if (!gameOver) {
+          player.lives = 0;
+          gameOver = true;
+        }
+        if (!gameOverPrompted) {
+          gameOverPrompted = true;
+          setTimeout(() => {
+            messageOverlay.innerHTML += "<br><span style='font-size: 24px; color: blue;'>Try again?</span>";
+            tryAgainAvailable = true;
+          }, 1000);
+        }
+        return;
+      }
+      if (gameOver) return;
+      if (paused) return;
+      
+      // Collision detection for shield rings.
+      // Each ring is fixed around the player's center.
+      const playerCenterX = player.x + player.size / 2;
+      const playerCenterY = player.y + player.size / 2;
+      for (let s = shieldRings.length - 1; s >= 0; s--) {
+        let shield = shieldRings[s];
+        for (let i = sqrs.length - 1; i >= 0; i--) {
+          let enemy = sqrs[i];
+          let enemyCenterX = enemy.x + enemy.size / 2;
+          let enemyCenterY = enemy.y + enemy.size / 2;
+          let dx = enemyCenterX - playerCenterX;
+          let dy = enemyCenterY - playerCenterY;
+          let distance = Math.sqrt(dx * dx + dy * dy);
+          // If enemy's center is within 20 pixels of the ring and enemy is not purple:
+          if (Math.abs(distance - shield.ringRadius) < 20 && enemy.color !== PURPLE_COLOR) {
+            sqrs.splice(i, 1);
+            shieldRings.splice(s, 1);
+            break;
+          }
+        }
+      }
+      
+      // Award a shield ring if the temporary purple effect is active,
+      // there are no enemies left, a shield hasn't been awarded this cycle,
+      // and we have fewer than 3 rings.
+      if (tempPurpleActive && sqrs.length === 0 && !shieldAwardedForCurrentTempPurple && shieldRings.length < 3) {
+        shieldRings.push({});
+        shieldAwardedForCurrentTempPurple = true;
+      }
+      // Recalculate shield ring radii using desired values.
+      recalcShieldRadii();
+      
+		let effectivePlayerSpeed = player.speed;
+		if (!tempPurpleActive) {
+		  for (let zone of mud) {
+			if (isIntersecting(player, zone)) {
+			  effectivePlayerSpeed = player.speed * 0.25;
+			  break;
+			}
+		  }
+		}
+  
+		// Store the player's previous position for the purple speed trail
+		if (tempPurpleActive) {
+		  playerTrail.push({ x: player.x, y: player.y });
+
+		  // Limit the length of the trail
+		  if (playerTrail.length > TRAIL_LENGTH) {
+			playerTrail.shift();
+		  }
+		} else {
+		  // Clear the trail when the effect ends
+		  playerTrail = [];
+		}
+		
+      let dx = 0, dy = 0;
+      if (keys["ArrowUp"] || keys["w"]) dy -= effectivePlayerSpeed;
+      if (keys["ArrowDown"] || keys["s"]) dy += effectivePlayerSpeed;
+      if (keys["ArrowLeft"] || keys["a"]) dx -= effectivePlayerSpeed;
+      if (keys["ArrowRight"] || keys["d"]) dx += effectivePlayerSpeed;
+      
+		player.x += dx;
+		if (!cheatNoWrap) {
+		  if (player.x > canvas.width) player.x = -player.size;
+		  if (player.x + player.size < 0) player.x = canvas.width;
+		} else {
+		  // Clamp player's x so they cannot move past the canvas edges
+		  if (player.x < 0) player.x = 0;
+		  if (player.x + player.size > canvas.width) player.x = canvas.width - player.size;
+		}
+
+		player.y += dy;
+		if (!cheatNoWrap) {
+		  if (player.y > canvas.height) player.y = -player.size;
+		  if (player.y + player.size < 0) player.y = canvas.height;
+		} else {
+		  // Clamp player's y so they cannot move past the canvas edges
+		  if (player.y < 0) player.y = 0;
+		  if (player.y + player.size > canvas.height) player.y = canvas.height - player.size;
+		}
+
+      
+      if (orbActive &&
+          player.x < orb.x + orb.size &&
+          player.x + player.size > orb.x &&
+          player.y < orb.y + orb.size &&
+          player.y + player.size > orb.y) {
+        processorbCollision();
+      }
+      
+      sqrs.forEach(sqr => {
+	  
+  // NEW: For yellow sqrs, choose a new random direction every 5-10 seconds.
+  if (sqr.color === "yellow") {
+    // If this property hasn't been set yet, initialize it.
+    if (!sqr.nextDirectionChange) {
+      sqr.nextDirectionChange = Date.now() + (5000 + Math.random() * 5000);
+    }
+    // If the current time is past the set time, update the direction.
+    if (Date.now() > sqr.nextDirectionChange) {
+      let newAngle = getRandomAngle();
+      sqr.speedX = Math.cos(newAngle) * YELLOW_SPEED;
+      sqr.speedY = Math.sin(newAngle) * YELLOW_SPEED;
+      // Set the next direction change time between 5-10 seconds from now.
+      sqr.nextDirectionChange = Date.now() + (5000 + Math.random() * 5000);
+    }
+  }	  
+	  
+		if (orbActive &&
+			sqr.x < orb.x + orb.size &&
+			sqr.x + sqr.size > orb.x &&
+			sqr.y < orb.y + orb.size &&
+			sqr.y + sqr.size > orb.y) {
+
+		  if (orb.isHex) {
+			if (sqr.color === "red") {
+			  progress = Math.max(0, progress - 1);
+			}
+			orbActive = false;
+			setTimeout(spawnorb, 1000);
+
+		  } else if (orb.color === "blue") {
+			// New Behavior: Spawn a full-sized yellow sqr at this location
+			let newSqr = {
+			  x: sqr.x,
+			  y: sqr.y,
+			  size: YELLOW_SIZE,
+			  color: "yellow",
+			  speedX: Math.cos(getRandomAngle()) * YELLOW_SPEED,
+			  speedY: Math.sin(getRandomAngle()) * YELLOW_SPEED
+			};
+
+			// Add the new sqr to the enemy list
+			sqrs.push(newSqr);
+
+			// Remove the blue orb and spawn a new one after a delay
+			orbActive = false;
+			setTimeout(spawnorb, 1000);
+
+		  } else {
+			// Default behavior for other orbs (green, purple, etc.)
+			orbActive = false;
+			resetAllEnemySpeeds();
+			if (orb.color === PURPLE_COLOR) {
+			  hudorbIndicator.style.backgroundColor = PURPLE_COLOR;
+			} else if (sqr.color === "yellow") {
+			  sqr.color = "orange";
+			  sqr.size = ORANGE_SIZE;
+			  let angle = Math.atan2(sqr.speedY, sqr.speedX);
+			  sqr.speedX = Math.cos(angle) * ORANGE_SPEED;
+			  sqr.speedY = Math.sin(angle) * ORANGE_SPEED;
+			} else if (sqr.color === "orange") {
+			  sqr.color = "red";
+			  sqr.size = RED_SIZE;
+			  let angle = Math.atan2(sqr.speedY, sqr.speedX);
+			  sqr.speedX = Math.cos(angle) * RED_SPEED;
+			  sqr.speedY = Math.sin(angle) * RED_SPEED;
+			} else if (sqr.color === "red") {
+			  progress = Math.max(0, progress - 1);
+			  orb.color = "green";
+			}
+			setTimeout(spawnorb, 1000);
+		  }
+		}
+        
+        if (sqr.color === "red") {
+          let centerPlayerX = player.x + player.size / 2;
+          let centerPlayerY = player.y + player.size / 2;
+          let centerEnemyX = sqr.x + sqr.size / 2;
+          let centerEnemyY = sqr.y + sqr.size / 2;
+          let dxTarget = centerPlayerX - centerEnemyX;
+          let dyTarget = centerPlayerY - centerEnemyY;
+          let dist = Math.sqrt(dxTarget * dxTarget + dyTarget * dyTarget);
+          if (dist > 0) {
+            sqr.speedX = RED_SPEED * (dxTarget / dist);
+            sqr.speedY = RED_SPEED * (dyTarget / dist);
+          }
+        } else if (sqr.color === "orange") {
+          let centerPlayerX = player.x + player.size / 2;
+          let centerPlayerY = player.y + player.size / 2;
+          let centerEnemyX = sqr.x + sqr.size / 2;
+          let centerEnemyY = sqr.y + sqr.size / 2;
+          let dxTarget = centerPlayerX - centerEnemyX;
+          let dyTarget = centerPlayerY - centerEnemyY;
+          let dist = Math.sqrt(dxTarget * dxTarget + dyTarget * dyTarget);
+          if (dist > 0) {
+            let speedMag = Math.sqrt(sqr.speedX * sqr.speedX + sqr.speedY * sqr.speedY);
+            let targetSpeedX = (dxTarget / dist) * speedMag;
+            let targetSpeedY = (dyTarget / dist) * speedMag;
+            sqr.speedX = sqr.speedX * 0.5 + targetSpeedX * 0.5;
+            sqr.speedY = sqr.speedY * 0.5 + targetSpeedY * 0.5;
+          }
+        }
+      
+        let slowdownMultiplier = 1;
+        for (let zone of mud) {
+          if (isIntersecting({ x: sqr.x, y: sqr.y, size: sqr.size }, zone)) {
+            slowdownMultiplier = 0.25;
+            break;
+          }
+        }
+        let effectiveSpeedX = sqr.speedX * slowdownMultiplier;
+        let effectiveSpeedY = sqr.speedY * slowdownMultiplier;
+      
+        let prevX = sqr.x, prevY = sqr.y;
+        sqr.x += effectiveSpeedX;
+        sqr.y += effectiveSpeedY;
+      
+		for (let obs of rocks) {
+		  if (
+			sqr.x < obs.x + obs.width &&
+			sqr.x + sqr.size > obs.x &&
+			sqr.y < obs.y + obs.height &&
+			sqr.y + sqr.size > obs.y
+		  ) {
+			// Reset position to the previous location
+			sqr.x = prevX;
+			sqr.y = prevY;
+			
+			if (sqr.color === "yellow") {
+			  // For yellow sqrs, choose a new random direction for bounce.
+			  let newAngle = getRandomAngle();
+			  sqr.speedX = Math.cos(newAngle) * YELLOW_SPEED;
+			  sqr.speedY = Math.sin(newAngle) * YELLOW_SPEED;
+			} else {
+			  // For other colors, reverse the current direction.
+			  sqr.speedX = -sqr.speedX;
+			  sqr.speedY = -sqr.speedY;
+			}
+			
+			// Ensure the speed is not too low.
+			let baseSpeed = (sqr.color === "red") ? RED_SPEED : ((sqr.color === "orange") ? ORANGE_SPEED : YELLOW_SPEED);
+			if (Math.abs(sqr.speedX) < baseSpeed * 0.5) {
+			  sqr.speedX = baseSpeed * Math.sign(sqr.speedX || 1);
+			}
+			if (Math.abs(sqr.speedY) < baseSpeed * 0.5) {
+			  sqr.speedY = baseSpeed * Math.sign(sqr.speedY || 1);
+			}
+			
+			// Update position with the new speed.
+			sqr.x += sqr.speedX;
+			sqr.y += sqr.speedY;
+			break;
+		  }
+		}
+		
+        if (sqr.x <= 0 || sqr.x >= canvas.width - sqr.size) {
+          sqr.speedX = -sqr.speedX;
+          sqr.x += sqr.speedX;
+        }
+        if (sqr.y <= 0 || sqr.y >= canvas.height - sqr.size) {
+          sqr.speedY = -sqr.speedY;
+          sqr.y += sqr.speedY;
+        }
+        if (
+          player.x < sqr.x + sqr.size &&
+          player.x + player.size > sqr.x &&
+          player.y < sqr.y + sqr.size &&
+          player.y + player.size > sqr.y
+        ) {
+          if (sqr.temporarilyPurple) {
+            sqr.toRemove = true;
+          } else {
+            handlePlayerHit();
+          }
+        }
+      });
+      
+      // Remove any enemies marked for removal.
+      sqrs = sqrs.filter(enemy => !enemy.toRemove);
+      
+      // Boss fight mode: update boss rotation and check collisions.
+      if (bossFight) {
+	  if (!paused) {
+		// Set rotation speed based on whether there are any boss rocks left.
+		let rotationSpeed = bossRocks.length === 0 ? 0.08 : 0.04;
+		boss.rotation += rotationSpeed;
+		// If no boss rocks remain, set boss color to orange.
+		if (bossRocks.length === 0) {
+		  boss.color = "orange";
+		}
+	  }
+        // Check collision with boss (using bounding box).
+        if (boss &&
+            player.x < boss.x + boss.size &&
+            player.x + player.size > boss.x &&
+            player.y < boss.y + boss.size &&
+            player.y + player.size > boss.y) {
+          handlePlayerHit();
+        }
+        // Check collision with bossMoat (20px border around canvas).
+        if (player.x < 20 ||
+            player.y < 20 ||
+            player.x + player.size > canvas.width - 20 ||
+            player.y + player.size > canvas.height - 20) {
+          handlePlayerHit();
+        }
+        // Check collision with bossRocks (behave as normal rocks).
+		// Handle bossRock collisions separately along each axis.
+		let tentativeX = player.x; // player.x has been updated by dx already.
+		let tentativeY = player.y; // player.y has been updated by dy already.
+
+		// First, check horizontal collision by testing new x with previous y.
+		if (isCollidingWithBossRocks({ x: tentativeX, y: playerPrevY, size: player.size })) {
+		  tentativeX = playerPrevX;
+		}
+
+		// Next, check vertical collision using the (possibly adjusted) x and new y.
+		if (isCollidingWithBossRocks({ x: tentativeX, y: tentativeY, size: player.size })) {
+		  tentativeY = playerPrevY;
+		}
+
+		player.x = tentativeX;
+		player.y = tentativeY;
+	  
+		// Fire a new boss shot if the timer has expired.
+		if (boss.color !== "orange") {
+		  let currentTime = Date.now();
+		  if (currentTime - lastBossShotTime >= bossShotInterval) {
+			fireBossShot();
+			scheduleNextBossShot();
+		  }
+		}
+		// Update existing boss shots.
+		updateBossShots();	  
+	  
+      }
+    }
+    
+    function drawRoundedRect(x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+      ctx.fill();
+    }
+    
+    function drawrock(obs) {
+      const { x, y, width, height, corners } = obs;
+      const radius = Math.min(width, height) / 4;
+      ctx.beginPath();
+      if (corners[0]) {
+        ctx.moveTo(x + radius, y);
+      } else {
+        ctx.moveTo(x, y);
+      }
+      if (corners[1]) {
+        ctx.lineTo(x + width - radius, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      } else {
+        ctx.lineTo(x + width, y);
+      }
+      if (corners[2]) {
+        ctx.lineTo(x + width, y + height - radius);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      } else {
+        ctx.lineTo(x + width, y + height);
+      }
+      if (corners[3]) {
+        ctx.lineTo(x + radius, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      } else {
+        ctx.lineTo(x, y + height);
+      }
+      if (corners[0]) {
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fill();
+    }
+    
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      mud.forEach(zone => {
+        ctx.fillStyle = zone.color;
+        drawRoundedRect(zone.x, zone.y, zone.width, zone.height, 20);
+      });
+      rocks.forEach(obs => {
+        ctx.fillStyle = obs.color;
+        drawrock(obs);
+      });
+      if (gameOver) {
+        ctx.textAlign = "center";
+        ctx.font = "bold 30px Arial";
+        ctx.fillStyle = "red";
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "black";
+        ctx.strokeText("GAME OVER", canvas.width / 2, canvas.height / 2);
+        ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
+        return;
+      }
+	  
+		// Draw player trail if purple power-up is active
+		if (tempPurpleActive) {
+		  ctx.globalAlpha = 0.25; // Semi-transparent effect
+		  ctx.fillStyle = PURPLE_COLOR; // Use the same purple as the power-up
+
+		  playerTrail.forEach((pos, index) => {
+			let size = player.size * ((index / TRAIL_LENGTH) * 0.7 + 0.3);
+			ctx.fillRect(pos.x + (player.size - size) / 2, pos.y + (player.size - size) / 2, size, size);
+		  });
+
+		  ctx.globalAlpha = 1.0; // Reset transparency
+		}
+		
+		ctx.fillStyle = playerIsPink ? "#FFB7CE" : "white";
+		ctx.fillRect(player.x, player.y, player.size, player.size);
+      if (orbActive) {
+        if (orb.isHex) {
+          // Draw hex orb as a blue hexagon.
+          drawRotatedHexagon(orb.x + orb.size / 2, orb.y + orb.size / 2, orb.size, 0, orb.color);
+        } else {
+          ctx.fillStyle = orb.color;
+          ctx.beginPath();
+          ctx.arc(orb.x + orb.size / 2, orb.y + orb.size / 2, orb.size / 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      sqrs.forEach(sqr => {
+        ctx.fillStyle = sqr.color;
+        ctx.fillRect(sqr.x, sqr.y, sqr.size, sqr.size);
+      });
+      // Draw fixed shield rings as concentric rings around the player's center.
+      const centerX = player.x + player.size / 2;
+      const centerY = player.y + player.size / 2;
+      ctx.strokeStyle = PURPLE_COLOR;
+      ctx.lineWidth = shieldThickness;
+      for (let shield of shieldRings) {
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, shield.ringRadius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      
+      // Draw boss fight elements if active.
+      if (bossFight) {
+        // Draw bossMoat: a 20px red border around the canvas.
+        ctx.fillStyle = "red";
+        ctx.fillRect(0, 0, canvas.width, 20); // Top border
+        ctx.fillRect(0, canvas.height - 20, canvas.width, 20); // Bottom border
+        ctx.fillRect(0, 0, 20, canvas.height); // Left border
+        ctx.fillRect(canvas.width - 20, 0, 20, canvas.height); // Right border
+        
+        // Draw boss hexagon with rotation.
+        drawRotatedHexagon(boss.x + boss.size / 2, boss.y + boss.size / 2, boss.size, boss.rotation, boss.color);
+		// If the boss has turned orange, draw the green triangle (triGreen) in its center.
+		if (boss.color === "orange") {
+		  // Use the same dimensions as the hud triangles.
+		  let triWidth = 41;   // Same width as the HUD triangle.
+		  let triHeight = 35;  // Same height as the HUD triangle.
+		  let offset = 5; // Adjust this value to move the triangle up
+		  // "green" is the color of the green orbs.
+		  drawTriangle(boss.x + boss.size / 2, boss.y + boss.size / 2 - offset, triWidth, triHeight, "green");
+		}		
+       	// Draw bossShots.
+		drawBossShots();
+		
+        // Draw bossRocks.
+        bossRocks.forEach(br => {
+          ctx.fillStyle = br.color;
+          drawrock(br);
+        });
+      }
+    }
+    
+	let lastUpdateTime = 0;
+	function gameLoop(timestamp) {
+	  if (!lastUpdateTime) {
+		lastUpdateTime = timestamp;
+	  }
+	  const delta = timestamp - lastUpdateTime;
+	  // Only update if at least ~16.67ms have passed (about 60fps)
+	  if (delta >= 16.67) {
+		update();
+		draw();
+		updateHUD();
+		lastUpdateTime = timestamp;
+	  }
+	  requestAnimationFrame(gameLoop);
+	}
+    
+    function restartGame() {
+      hudorbIndicator.style.backgroundColor = "grey";
+      let pos = getValidSpawnPosition(player.size);
+      player = { x: pos.x, y: pos.y, size: 20, speed: basePlayerSpeed, lives: 1, level: 1 };
+      progress = 0;
+      hasScored = false;
+      paused = true;
+      levelPaused = true;
+      gameOver = false;
+      gameOverPrompted = false;
+      tryAgainAvailable = false;
+      orbActive = true;
+      manualPause = false;
+      manualPauseTimer = null;
+      manualPauseLocked = false;
+      messageOverlay.style.color = "blue";
+      messageOverlay.textContent = `Level ${player.level}`;
+      controlsLocked = true;
+      setTimeout(() => { controlsLocked = false; }, 1000);
+      // Reset shield-related variables.
+      shieldRings = [];
+      shieldAwardedForCurrentTempPurple = false;
+      tempPurpleActive = false;
+      // Reset boss fight state if any.
+      bossFight = false;
+      boss = null;
+      bossRocks = [];
+      spawnrocks();
+      spawnmud();
+      spawnorb();
+	  spawnsqrs();
+	  // Reset boss fight state if any.
+	  bossFight = false;
+	  boss = null;
+	  bossRocks = [];
+	  bossShots = [];
+    }
+    
+    restartGame();
+    requestAnimationFrame(gameLoop);2505
+    
+    setInterval(resetAllEnemySpeeds, 1000);
+    
+    let keys = {};
+    document.addEventListener("keydown", (event) => {
+      // If in a boss fight and waiting for input, allow movement keys to unpause
+		  if (
+			bossFight &&
+			bossWaitForInput &&
+			["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d"].includes(event.key) &&
+			!event.repeat
+		  ) {
+			bossWaitForInput = false;
+			paused = false;
+			levelPaused = false;
+			messageOverlay.textContent = "";
+		  } else if (controlsLocked) {
+			return;
+		  }
+      keys[event.key] = true;
+      
+      const leftKey = keys["ArrowLeft"] || keys["a"];
+      const rightKey = keys["ArrowRight"] || keys["d"];
+      if (!manualPause && leftKey && rightKey) {
+        if (!manualPauseTimer) {
+          manualPauseTimer = setTimeout(() => {
+            if ((keys["ArrowLeft"] || keys["a"]) && (keys["ArrowRight"] || keys["d"])) {
+              manualPause = true;
+              paused = true;
+              messageOverlay.style.color = "blue";
+              messageOverlay.textContent = "Paused";
+              manualPauseTimer = null;
+              manualPauseLocked = true;
+            }
+          }, 1000);
+        }
+      }
+      
+      if (manualPause && (keys["ArrowUp"] || keys["w"] || keys["ArrowDown"] || keys["s"] || leftKey || rightKey)) {
+        if (!manualPauseLocked) {
+          manualPause = false;
+          paused = false;
+          messageOverlay.textContent = "";
+        }
+      }
+      
+      if (gameOver && tryAgainAvailable) {
+        if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d"].includes(event.key)) {
+          restartGame();
+          return;
+        }
+      }
+      if (!manualPause && !bossWaitForInput && (levelPaused || (paused && !hitCooldown)) && !gameOver) {
+        levelPaused = false;
+        paused = false;
+        messageOverlay.textContent = "";
+      }
+		// Cheat code detection for "3712"
+		if ("0123456789".includes(event.key)) {
+		  cheatCodeBuffer += event.key;
+		  // Keep only the last 4 digits
+		  if (cheatCodeBuffer.length > 4) {
+			cheatCodeBuffer = cheatCodeBuffer.slice(-4);
+		  }
+		  if (cheatCodeBuffer === "3712") {
+			playerIsPink = true;
+			console.log("You are now pink!");
+		  }
+			if (cheatCodeBuffer === "2505") {
+			  cheatNoWrap = true;
+			  console.log("Player wrapping disabled!");
+			}
+		}
+    });
+    document.addEventListener("keyup", (event) => {
+      delete keys[event.key];
+      if ((event.key === "ArrowLeft" || event.key === "a" || event.key === "ArrowRight" || event.key === "d") && manualPauseTimer) {
+        clearTimeout(manualPauseTimer);
+        manualPauseTimer = null;
+      }
+      if (
+        !keys["ArrowLeft"] && !keys["ArrowRight"] && !keys["ArrowUp"] && !keys["ArrowDown"] &&
+        !keys["w"] && !keys["a"] && !keys["s"] && !keys["d"]
+      ) {
+        manualPauseLocked = false;
+      }
+    });
+    
+	canvas.addEventListener('mousedown', function(event) {
+	  let rect = canvas.getBoundingClientRect();
+	  let mouseX = event.clientX - rect.left;
+	  let mouseY = event.clientY - rect.top;
+	  
+	  if (event.button === 0) { // Left click
+		if (debug && mouseX >= player.x && mouseX <= player.x + player.size &&
+			mouseY >= player.y && mouseY <= player.y + player.size) {
+		  console.log("Life added");
+		  player.lives++;
+		  event.preventDefault();
+		  return;
+		}
+		// Debug-only: Check if orb is clicked to trigger debugSkipLevels(1)
+		if (orbActive && debug) {
+		  let orbCenterX = orb.x + orb.size / 2;
+		  let orbCenterY = orb.y + orb.size / 2;
+		  let dx = mouseX - orbCenterX;
+		  let dy = mouseY - orbCenterY;
+		  if (Math.sqrt(dx * dx + dy * dy) <= orb.size / 2) {
+		  console.log("Level skipped");
+			debugSkipLevels(1);
+			event.preventDefault();
+			return;
+		  }
+		}
+		// Debug-only: Process clicks on enemy squares (sqrs)
+			if (debug) {
+			  let enemyFound = false;
+			  for (let i = 0; i < sqrs.length; i++) {
+				let enemy = sqrs[i];
+				if (mouseX >= enemy.x && mouseX <= enemy.x + enemy.size &&
+					mouseY >= enemy.y && mouseY <= enemy.y + enemy.size) {
+				  enemyFound = true;
+				  console.log("Evolved Enemy");
+				  if (enemy.color === "yellow") {
+					enemy.color = "orange";
+					enemy.size = ORANGE_SIZE;
+					let angle = Math.atan2(enemy.speedY, enemy.speedX);
+					enemy.speedX = Math.cos(angle) * ORANGE_SPEED;
+					enemy.speedY = Math.sin(angle) * ORANGE_SPEED;
+				  } else if (enemy.color === "orange") {
+					enemy.color = "red";
+					enemy.size = RED_SIZE;
+					let angle = Math.atan2(enemy.speedY, enemy.speedX);
+					enemy.speedX = Math.cos(angle) * RED_SPEED;
+					enemy.speedY = Math.sin(angle) * RED_SPEED;
+				  } else if (enemy.color === "red") {
+					console.log("Removed enemy");
+					sqrs.splice(i, 1);
+				  }
+				  break;
+				}
+			  }
+			}
+			event.preventDefault();
+		
+	  } else if (event.button === 2) { // Right click
+		// Debug-only: Check if orb is clicked to trigger debugSkipLevels(10)
+		if (orbActive && debug) {
+		  let orbCenterX = orb.x + orb.size / 2;
+		  let orbCenterY = orb.y + orb.size / 2;
+		  let dx = mouseX - orbCenterX;
+		  let dy = mouseY - orbCenterY;
+		  if (Math.sqrt(dx * dx + dy * dy) <= orb.size / 2) {
+			console.log("Jumped 10 levels");
+			debugSkipLevels(10);
+			event.preventDefault();
+			return;
+		  }
+		}
+		if (debug && mouseX >= player.x && mouseX <= player.x + player.size &&
+			mouseY >= player.y && mouseY <= player.y + player.size) {
+		  console.log("Life removed");
+		  player.lives--; 
+		  event.preventDefault();
+		  return;
+		}
+		// Debug-only: Process rock removal, mud removal, and enemy modifications.
+		if (debug) {
+		  for (let i = 0; i < rocks.length; i++) {
+			let rock = rocks[i];
+			if (mouseX >= rock.x && mouseX <= rock.x + rock.width &&
+				mouseY >= rock.y && mouseY <= rock.y + rock.height) {
+			  console.log("Removed rock");
+			  rocks.splice(i, 1);
+			  event.preventDefault();
+			  return;
+			}
+		  }
+		  for (let i = 0; i < bossRocks.length; i++) {
+			let rock = bossRocks[i];
+			if (mouseX >= rock.x && mouseX <= rock.x + rock.width &&
+				mouseY >= rock.y && mouseY <= rock.y + rock.height) {
+			  console.log("Removed boss rock");
+			  bossRocks.splice(i, 1);
+			  event.preventDefault();
+			  return;
+			}
+		  }
+		  for (let i = 0; i < mud.length; i++) {
+			let m = mud[i];
+			if (mouseX >= m.x && mouseX <= m.x + m.width &&
+				mouseY >= m.y && mouseY <= m.y + m.height) {
+			  console.log("Removed mud");
+			  mud.splice(i, 1);
+			  event.preventDefault();
+			  return;
+			}
+		  }
+		  for (let i = 0; i < sqrs.length; i++) {
+			let enemy = sqrs[i];
+			if (mouseX >= enemy.x && mouseX <= enemy.x + enemy.size &&
+				mouseY >= enemy.y && mouseY <= enemy.y + enemy.size) {
+			  console.log("Devolved enemy");
+			  if (enemy.color === "red") {
+				enemy.color = "orange";
+				enemy.size = ORANGE_SIZE;
+				let angle = Math.atan2(enemy.speedY, enemy.speedX);
+				enemy.speedX = Math.cos(angle) * ORANGE_SPEED;
+				enemy.speedY = Math.sin(angle) * ORANGE_SPEED;
+			  } else if (enemy.color === "orange") {
+				enemy.color = "yellow";
+				enemy.size = YELLOW_SIZE;
+				let angle = Math.atan2(enemy.speedY, enemy.speedX);
+				enemy.speedX = Math.cos(angle) * YELLOW_SPEED;
+				enemy.speedY = Math.sin(angle) * YELLOW_SPEED;
+			  } else if (enemy.color === "yellow") {
+			    console.log("Removed enemy");
+				sqrs.splice(i, 1);
+			  }
+			  event.preventDefault();
+			  return;
+			}
+		  }
+		  // Debug-only: If no enemy was clicked, spawn a new enemy.
+		  console.log("Spawned an enemy");
+		  let angle = getRandomAngle();
+		  let newEnemy = {
+			x: mouseX - YELLOW_SIZE / 2,
+			y: mouseY - YELLOW_SIZE / 2,
+			size: YELLOW_SIZE,
+			color: "yellow",
+			speedX: Math.cos(angle) * YELLOW_SPEED,
+			speedY: Math.sin(angle) * YELLOW_SPEED
+		  };
+		  sqrs.push(newEnemy);
+		  event.preventDefault();
+		}
+		
+	  } else if (event.button === 1) { // Middle click (Debug orb cycle)
+		if (debug) {  // Only execute debug features when debug === 1.
+		  // If middle click is on the player, set shield rings to 3.
+		  if (mouseX >= player.x && mouseX <= player.x + player.size &&
+			  mouseY >= player.y && mouseY <= player.y + player.size) {
+			shieldRings = [{}, {}, {}];
+			recalcShieldRadii();
+			console.log("Shield set to 3");
+			event.preventDefault();
+			return;
+		  }
+		  // Otherwise, if orb is active, cycle its colour.
+		  if (orbActive) {
+			let orbCenterX = orb.x + orb.size / 2;
+			let orbCenterY = orb.y + orb.size / 2;
+			let dx = mouseX - orbCenterX;
+			let dy = mouseY - orbCenterY;
+			if (Math.sqrt(dx * dx + dy * dy) <= orb.size / 2) {
+			console.log("Cycled orb colour");
+			  if (orb.color === "green" && !orb.isHex) {
+				orb.color = "blue";
+				orb.isHex = false;
+			  } else if (orb.color === "blue" && !orb.isHex) {
+				orb.color = PURPLE_COLOR;
+				orb.isHex = false;
+			  } else if (orb.color === PURPLE_COLOR) {
+				orb.color = "blue";
+				orb.isHex = true;
+			  } else if (orb.isHex) {
+				orb.color = "green";
+				orb.isHex = false;
+			  }
+			  event.preventDefault();
+			  return;
+			}
+		  }
+		  for (let i = 0; i < sqrs.length; i++) {
+			let enemy = sqrs[i];
+			if (mouseX >= enemy.x && mouseX <= enemy.x + enemy.size &&
+				mouseY >= enemy.y && mouseY <= enemy.y + enemy.size) {
+			  console.log("Removed all enemies");
+			  sqrs = [];
+			  event.preventDefault();
+			  return;
+			}
+		  }
+		}
+		event.preventDefault();
+	  }
+	});
+    
+	function debugSkipLevels(levelsToSkip) {
+	  if (levelsToSkip === 10) {
+		// Calculate the next multiple of 10.
+		// (player.level + 1) ensures that if you're exactly on a multiple (e.g., 10),
+		// you will jump to the next one (20).
+		player.level = Math.ceil((player.level + 1) / 10) * 10;
+	  } else {
+		player.level += levelsToSkip;
+	  }
+	  purpleorbUsed = false;
+	  spawnmud();
+	  spawnrocks();
+	  spawnsqrs();
+	  progress = 0;
+	  levelPaused = true;
+	  paused = true;
+	  messageOverlay.style.color = "blue";
+	  messageOverlay.textContent = `Level ${player.level}`;
+	  controlsLocked = true;
+	  setTimeout(() => { controlsLocked = false; }, 1000);
+	  spawnorb();
+	}
+  </script>
+</body>
+</html>
