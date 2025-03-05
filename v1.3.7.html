@@ -264,7 +264,9 @@
 	let cheatCodeBuffer = ""; //3712-Pink 2505-NoWrap
 	// Trail Effect
 	let playerTrail = [];
-	const TRAIL_LENGTH = 20;   
+	const TRAIL_LENGTH = 20;  
+	// Green Triangle Glow
+	let triGlowEnabled = false;
 	
     const YELLOW_SPEED = 1, ORANGE_SPEED = 2, RED_SPEED = 4;
     const YELLOW_SIZE = 20, ORANGE_SIZE = 25, RED_SIZE = 30;
@@ -1056,6 +1058,15 @@
 	  ctx.fillStyle = color;
 	  ctx.fill();
 	}
+	function drawGlowingTriangle(cx, cy, width, height, fillColor, glowColor, glowBlur) {
+	  ctx.save();
+	  ctx.shadowColor = glowColor;
+	  ctx.shadowBlur = glowBlur;
+	  ctx.shadowOffsetX = 0;
+	  ctx.shadowOffsetY = 0;
+	  drawTriangle(cx, cy, width, height, fillColor);
+	  ctx.restore();
+	}
     
     // New function: Initiate boss fight by clearing entities, repositioning the player,
     // and creating the boss, bossMoat (drawn as border) and bossRocks.
@@ -1197,30 +1208,31 @@
       if (keys["ArrowLeft"] || keys["a"]) dx -= effectivePlayerSpeed;
       if (keys["ArrowRight"] || keys["d"]) dx += effectivePlayerSpeed;
       
-		player.x += dx;
-		if (!cheatNoWrap) {
-		  if (player.x > canvas.width) player.x = -player.size;
-		  if (player.x + player.size < 0) player.x = canvas.width;
-		} else {
+      let oldX = player.x;
+      player.x += dx;
+		if (cheatNoWrap) {
 		  // Clamp player's x so they cannot move past the canvas edges
 		  if (player.x < 0) player.x = 0;
 		  if (player.x + player.size > canvas.width) player.x = canvas.width - player.size;
-		}
-
-		player.y += dy;
-		if (!cheatNoWrap) {
-		  if (player.y > canvas.height) player.y = -player.size;
-		  if (player.y + player.size < 0) player.y = canvas.height;
-		} else {
+		}	  
+      if (player.x > canvas.width) player.x = -player.size;
+      if (player.x + player.size < 0) player.x = canvas.width;
+      if (isCollidingWithrocks(player)) {
+        player.x = oldX;
+      }
+      
+      let oldY = player.y;
+      player.y += dy;
+		if (cheatNoWrap) {
 		  // Clamp player's y so they cannot move past the canvas edges
 		  if (player.y < 0) player.y = 0;
 		  if (player.y + player.size > canvas.height) player.y = canvas.height - player.size;
-		}
-			if (isCollidingWithrocks(player)) {
-			player.x = playerPrevX;
-			player.y = playerPrevY;
-		}
-
+		}	  
+      if (player.y > canvas.height) player.y = -player.size;
+      if (player.y + player.size < 0) player.y = canvas.height;
+      if (isCollidingWithrocks(player)) {
+        player.y = oldY;
+      }
       
       if (orbActive &&
           player.x < orb.x + orb.size &&
@@ -1420,6 +1432,7 @@
 		// If no boss rocks remain, set boss color to orange.
 		if (bossRocks.length === 0) {
 		  boss.color = "orange";
+		  bossShots = []; // Delete all existing boss shots
 		}
 	  }
         // Check collision with boss (using bounding box).
@@ -1601,7 +1614,15 @@
 		  let triHeight = 35;  // Same height as the HUD triangle.
 		  let offset = 5; // Adjust this value to move the triangle up
 		  // "green" is the color of the green orbs.
-		  drawTriangle(boss.x + boss.size / 2, boss.y + boss.size / 2 - offset, triWidth, triHeight, "green");
+		  let centerX = boss.x + boss.size / 2;
+		  let centerY = boss.y + boss.size / 2 - offset;
+			  if (triGlowEnabled) {
+				// Draw the triangle with a green glow.
+				drawGlowingTriangle(centerX, centerY, triWidth, triHeight, "green", "green", 15);
+			  } else {
+				// Draw the triangle without any glow.
+				drawTriangle(centerX, centerY, triWidth, triHeight, "green");
+			  }
 		}		
        	// Draw bossShots.
 		drawBossShots();
@@ -1621,7 +1642,7 @@
 	  }
 	  const delta = timestamp - lastUpdateTime;
 	  // Only update if at least ~16.67ms have passed (about 60fps)
-	  if (delta >= 16.67) {
+	  if (delta >= 15) {
 		update();
 		draw();
 		updateHUD();
@@ -1669,7 +1690,7 @@
     }
     
     restartGame();
-    requestAnimationFrame(gameLoop);
+    gameLoop();
     
     setInterval(resetAllEnemySpeeds, 1000);
     
