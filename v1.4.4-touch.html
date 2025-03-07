@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=800, initial-scale=1.0" />
   <title>A Game of Squares</title>
   <style>
+	html, body {
+	  overflow: hidden;    /* Prevents scrollbars from appearing */
+	  touch-action: none;  /* Disables default touch actions like scrolling and zooming */
+	}
     body {
       margin: 0;
       background-color: #222;
@@ -227,7 +231,7 @@
   <!-- Debug Mode Indicator & Version Number -->
   <div id="bottomBar">
     <div id="debugModeIndicator"></div>
-    <div id="devVersion">v1.4-touch</div>
+    <div id="devVersion">v1.4.4-touch</div>
   </div>
   <script>
     let debug = 0;
@@ -415,7 +419,7 @@
 			  touchDx = 0;
 			  touchDy = 0;
 		  }
-		}, false);
+		}, passive: false);
 
 	document.addEventListener('touchmove', function(e) {
 	  e.preventDefault(); // Prevent scrolling
@@ -425,7 +429,7 @@
 		  touchDx = currentX - touchStartX;
 		  touchDy = currentY - touchStartY;
 	  }
-	}, false);
+	}, passive: false);
 
 	document.addEventListener('touchend', function(e) {
 	  e.preventDefault();
@@ -434,7 +438,7 @@
 	  touchStartY = null;
 	  touchDx = 0;
 	  touchDy = 0;
-	}, false);
+	}, passive: false);
 	
     canvas.addEventListener('contextmenu', function(event) {
       event.preventDefault();
