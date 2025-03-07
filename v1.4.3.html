@@ -360,9 +360,9 @@
 			progress = 0;
 			player.level++;
 			purpleorbUsed = false;
-			spawnsqrs();
 			spawnmud();
 			spawnrocks();
+			spawnsqrs();
 			levelPaused = true;
 			paused = true;
 			messageOverlay.style.color = "blue";
@@ -837,43 +837,69 @@
     }
     
 	function spawnsqrs() {
-	  sqrs = [];
-	  let redCount = Math.floor(player.level / 25);
-	  let orangeCount = Math.floor(player.level / 10);
-	  let yellowCount = player.level - (redCount + orangeCount);
-	  yellowCount = Math.min(yellowCount, 50);
-	  let totalEnemies = redCount + orangeCount + yellowCount;
-	  // Cap totalEnemies
-	  totalEnemies = Math.min(totalEnemies, 25);
-	  
-	  for (let i = 0; i < totalEnemies; i++) {
-		let enemy = { x: 0, y: 0, size: YELLOW_SIZE, speedX: 0, speedY: 0, color: "yellow" };
-		if (i < redCount) {
-		  enemy.color = "red";
-		  enemy.size = RED_SIZE;
-		} else if (i < redCount + orangeCount) {
-		  enemy.color = "orange";
-		  enemy.size = ORANGE_SIZE;
-		} else {
-		  enemy.color = "yellow";
-		  enemy.size = YELLOW_SIZE;
+		sqrs = [];
+		let redCount = Math.floor(player.level / 25);
+		let orangeCount = Math.floor(player.level / 10);
+		let yellowCount = player.level - (redCount + orangeCount);
+		yellowCount = Math.min(yellowCount, 50);
+		let totalEnemies = redCount + orangeCount + yellowCount;
+
+		// Cap totalEnemies
+		totalEnemies = Math.min(totalEnemies, 25);
+
+		for (let i = 0; i < totalEnemies; i++) {
+			let enemy = { x: 0, y: 0, size: YELLOW_SIZE, speedX: 0, speedY: 0, color: "yellow" };
+			
+			if (i < redCount) {
+				enemy.color = "red";
+				enemy.size = RED_SIZE;
+			} else if (i < redCount + orangeCount) {
+				enemy.color = "orange";
+				enemy.size = ORANGE_SIZE;
+			} else {
+				enemy.color = "yellow";
+				enemy.size = YELLOW_SIZE;
+			}
+
+			// Ensure enemy doesn't spawn inside rocks
+			let validSpawn = false;
+			let pos;
+
+			while (!validSpawn) {
+				pos = getValidEnemySpawnPosition(enemy.size);
+				validSpawn = true; // Assume valid position
+
+				// Check if it overlaps with any rock
+				for (let rock of rocks) {
+					if (
+						pos.x < rock.x + rock.width &&
+						pos.x + enemy.size > rock.x &&
+						pos.y < rock.y + rock.height &&
+						pos.y + enemy.size > rock.y
+					) {
+						validSpawn = false; // Invalid spawn, try again
+						break;
+					}
+				}
+			}
+
+			enemy.x = pos.x;
+			enemy.y = pos.y;
+			let angle = getRandomAngle();
+
+			if (enemy.color === "red") {
+				enemy.speedX = Math.cos(angle) * RED_SPEED;
+				enemy.speedY = Math.sin(angle) * RED_SPEED;
+			} else if (enemy.color === "orange") {
+				enemy.speedX = Math.cos(angle) * ORANGE_SPEED;
+				enemy.speedY = Math.sin(angle) * ORANGE_SPEED;
+			} else {
+				enemy.speedX = Math.cos(angle) * YELLOW_SPEED;
+				enemy.speedY = Math.sin(angle) * YELLOW_SPEED;
+			}
+
+			sqrs.push(enemy);
 		}
-		let pos = getValidEnemySpawnPosition(enemy.size);
-		enemy.x = pos.x;
-		enemy.y = pos.y;
-		let angle = getRandomAngle();
-		if (enemy.color === "red") {
-		  enemy.speedX = Math.cos(angle) * RED_SPEED;
-		  enemy.speedY = Math.sin(angle) * RED_SPEED;
-		} else if (enemy.color === "orange") {
-		  enemy.speedX = Math.cos(angle) * ORANGE_SPEED;
-		  enemy.speedY = Math.sin(angle) * ORANGE_SPEED;
-		} else {
-		  enemy.speedX = Math.cos(angle) * YELLOW_SPEED;
-		  enemy.speedY = Math.sin(angle) * YELLOW_SPEED;
-		}
-		sqrs.push(enemy);
-	  }
 	}
     
     function spawnorb() {
@@ -1303,9 +1329,9 @@
 			progress = 0;
 			player.level++;
 			purpleorbUsed = false;
-			spawnsqrs();
 			spawnmud();
 			spawnrocks();
+			spawnsqrs();
 			levelPaused = true;
 			paused = true;
 			messageOverlay.style.color = "blue";
@@ -1470,9 +1496,9 @@
           hudorbIndicator.style.backgroundColor = "grey";
           player.level++;
           purpleorbUsed = false;
-          spawnsqrs();
           spawnmud();
           spawnrocks();
+          spawnsqrs();
           progress = 0;
           levelPaused = true;
           paused = true;
@@ -1490,9 +1516,9 @@
           hudorbIndicator.style.backgroundColor = "grey";
           player.level++;
           purpleorbUsed = false;
-          spawnsqrs();
           spawnmud();
           spawnrocks();
+          spawnsqrs();
           progress = 0;
           levelPaused = true;
           paused = true;
@@ -2291,10 +2317,10 @@
       bossFight = false;
       boss = null;
       bossRocks = [];
-      spawnrocks();
       spawnmud();
-      spawnorb();
+      spawnrocks();
 	  spawnsqrs();
+      spawnorb();
 	  // Reset boss fight state if any.
 	  bossFight = false;
 	  boss = null;
