@@ -398,7 +398,7 @@
 	let touchDy = 0;
 
 	// Touch event listeners
-	canvas.addEventListener('touchstart', function(e) {
+	document.addEventListener('touchstart', function(e) {
 	  if (!paused) {
 		e.preventDefault();
 	  } // Prevent scrolling when unpaused
