@@ -1892,8 +1892,8 @@
 				let normX = touchDx / mag;
 				let normY = touchDy / mag;
 				// Move the player at fixed speed.
-				dx = normX * player.speed;
-				dy = normY * player.speed;
+				dx = normX * effectivePlayerSpeed;
+				dy = normY * effectivePlayerSpeed;
 			} else {
 				dx = 0;
 				dy = 0;
