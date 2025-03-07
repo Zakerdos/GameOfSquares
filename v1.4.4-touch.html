@@ -399,8 +399,9 @@
 
 	// Touch event listeners
 	document.addEventListener('touchstart', function(e) {
-	  e.preventDefault(); // Prevent scrolling
-	  // Unpause game
+	  if (!paused) {
+		e.preventDefault();
+	  } // Prevent scrolling when unpaused
 	  if (paused || levelPaused || bossWaitForInput) {
 		  paused = false;
 		  levelPaused = false;
