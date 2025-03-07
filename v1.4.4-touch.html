@@ -259,13 +259,6 @@
 	  }
 	}
 
-	// Touch variables
-	let touchStartX = null;
-	let touchStartY = null;
-	let touchActive = false;
-	let touchDx = 0;
-	let touchDy = 0;
-
 	function drawTriPower() {
 	  // Draw each triangle only if it's active
 	  drawTriObj(triGreen, "green");
@@ -394,45 +387,54 @@
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 	
-	// Touch event listeners - added once at initialization
+	// Touch variables
+	let touchStartX = null;
+	let touchStartY = null;
+	let touchActive = false;
+	let touchDx = 0;
+	let touchDy = 0;
+
+	// Touch event listeners
 	canvas.addEventListener('touchstart', function(e) {
-		e.preventDefault(); // Prevent scrolling
-		
-		// Unpause the game on initial touch
-		if (paused || levelPaused || bossWaitForInput) {
-			paused = false;
-			levelPaused = false;
-			bossWaitForInput = false;
-			manualPause = false;
-			controlsLocked = false;
-			messageOverlay.textContent = "";
-			console.log("Game unpaused via touch!");
-		}
-		
-		if (e.touches.length > 0) {
-			touchActive = true;
-			touchStartX = e.touches[0].clientX;
-			touchStartY = e.touches[0].clientY;
-			touchDx = 0;
-			touchDy = 0;
-		}
-	}, false);
+	  e.preventDefault(); // Prevent scrolling
+	  // Unpause game if needed (or any additional logic)
+	  if (paused || levelPaused || bossWaitForInput) {
+		  paused = false;
+		  levelPaused = false;
+		  bossWaitForInput = false;
+		  manualPause = false;
+		  controlsLocked = false;
+		  messageOverlay.textContent = "";
+	  }
+	  
+		  if (e.touches.length > 0) {
+			  touchActive = true;
+			  if (touchStartX === null && touchStartY === null) {
+				  touchStartX = e.touches[0].clientX;
+				  touchStartY = e.touches[0].clientY;
+			  }
+			  touchDx = 0;
+			  touchDy = 0;
+		  }
+		}, false);
 
 	canvas.addEventListener('touchmove', function(e) {
-		e.preventDefault(); // Prevent scrolling
-		if (touchActive && e.touches.length > 0) {
-			let currentX = e.touches[0].clientX;
-			let currentY = e.touches[0].clientY;
-			touchDx = currentX - touchStartX;
-			touchDy = currentY - touchStartY;
-		}
+	  e.preventDefault(); // Prevent scrolling
+	  if (touchActive && e.touches.length > 0) {
+		  let currentX = e.touches[0].clientX;
+		  let currentY = e.touches[0].clientY;
+		  touchDx = currentX - touchStartX;
+		  touchDy = currentY - touchStartY;
+	  }
 	}, false);
 
 	canvas.addEventListener('touchend', function(e) {
-		e.preventDefault();
-		touchActive = false;
-		touchDx = 0;
-		touchDy = 0;
+	  e.preventDefault();
+	  touchActive = false;
+	  touchStartX = null; // Reset initial touch point for next touch event
+	  touchStartY = null;
+	  touchDx = 0;
+	  touchDy = 0;
 	}, false);
 	
     canvas.addEventListener('contextmenu', function(event) {
@@ -1682,6 +1684,51 @@
 	  drawTriangle(cx, cy, width, height, fillColor);
 	  ctx.restore();
 	}
+	
+	function drawJoystickOverlay() {
+	  if (!touchActive) return;
+	  
+	  // Convert the initial touch point to canvas coordinates.
+	  const rect = canvas.getBoundingClientRect();
+	  const centerX = touchStartX - rect.left;
+	  const centerY = touchStartY - rect.top;
+	  
+	  // Joystick parameters
+	  const joystickRadius = 75; // outer circle radius
+	  const halfRadius = joystickRadius / 2; // cross arm length
+	  
+	  // Draw the filled circle (75% transparent grey)
+	  ctx.beginPath();
+	  ctx.arc(centerX, centerY, joystickRadius, 0, Math.PI * 2);
+	  ctx.fillStyle = "rgba(64,64,64,0.25)"; // 75% transparent grey
+	  ctx.fill();
+	  
+	  // Draw the circumference stroke (50% transparent dark grey)
+	  ctx.beginPath();
+	  ctx.arc(centerX, centerY, joystickRadius, 0, Math.PI * 2);
+	  ctx.strokeStyle = "rgba(64,64,64,0.5)"; // 50% transparent dark grey
+	  ctx.lineWidth = 2;
+	  ctx.stroke();
+	  
+	  // Draw the cross:
+	  ctx.beginPath();
+	  // Horizontal line
+	  ctx.moveTo(centerX - halfRadius, centerY);
+	  ctx.lineTo(centerX + halfRadius, centerY);
+	  // Vertical line
+	  ctx.moveTo(centerX, centerY - halfRadius);
+	  ctx.lineTo(centerX, centerY + halfRadius);
+	  ctx.strokeStyle = "rgba(64,64,64,0.5)";
+	  ctx.lineWidth = 2;
+	  ctx.stroke();
+	  
+	  // Draw the center dot (25% transparent dark grey)
+	  ctx.beginPath();
+	  ctx.arc(centerX, centerY, 5, 0, Math.PI * 2);
+	  ctx.fillStyle = "rgba(64,64,64,0.25)";
+	  ctx.fill();
+	}
+
     
     // New function: Initiate boss fight by clearing entities, repositioning the player,
     // and creating the boss, bossMoat (drawn as border) and bossRocks.
@@ -2336,6 +2383,9 @@
 		updateHUD();
 		lastUpdateTime = timestamp;
 	  }
+	  if (touchActive) {
+		drawJoystickOverlay();
+	  }	  
 	  requestAnimationFrame(gameLoop);
 	}
     
