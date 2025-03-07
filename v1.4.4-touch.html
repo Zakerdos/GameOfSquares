@@ -400,7 +400,7 @@
 	// Touch event listeners
 	document.addEventListener('touchstart', function(e) {
 	  e.preventDefault(); // Prevent scrolling
-	  // Unpause game if needed (or any additional logic)
+	  // Unpause game
 	  if (paused || levelPaused || bossWaitForInput) {
 		  paused = false;
 		  levelPaused = false;
@@ -409,7 +409,11 @@
 		  controlsLocked = false;
 		  messageOverlay.textContent = "";
 	  }
-	  
+	  // Check if game over and try again is available
+	  if (gameOver && tryAgainAvailable) {
+		restartGame();
+		return;
+	  }	  
 		  if (e.touches.length > 0) {
 			  touchActive = true;
 			  if (touchStartX === null && touchStartY === null) {
@@ -419,7 +423,7 @@
 			  touchDx = 0;
 			  touchDy = 0;
 		  }
-		}, passive: false);
+		}, {passive: false});
 
 	document.addEventListener('touchmove', function(e) {
 	  e.preventDefault(); // Prevent scrolling
@@ -429,7 +433,7 @@
 		  touchDx = currentX - touchStartX;
 		  touchDy = currentY - touchStartY;
 	  }
-	}, passive: false);
+	}, {passive: false});
 
 	document.addEventListener('touchend', function(e) {
 	  e.preventDefault();
@@ -438,7 +442,7 @@
 	  touchStartY = null;
 	  touchDx = 0;
 	  touchDy = 0;
-	}, passive: false);
+	}, {passive: false});
 	
     canvas.addEventListener('contextmenu', function(event) {
       event.preventDefault();
