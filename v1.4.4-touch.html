@@ -227,7 +227,7 @@
   <!-- Debug Mode Indicator & Version Number -->
   <div id="bottomBar">
     <div id="debugModeIndicator"></div>
-    <div id="devVersion">v1.4.4-touch</div>
+    <div id="devVersion">v1.4-touch</div>
   </div>
   <script>
     let debug = 0;
@@ -394,7 +394,7 @@
 	let touchDy = 0;
 
 	// Touch event listeners
-	canvas.addEventListener('touchstart', function(e) {
+	document.addEventListener('touchstart', function(e) {
 	  e.preventDefault(); // Prevent scrolling
 	  // Unpause game if needed (or any additional logic)
 	  if (paused || levelPaused || bossWaitForInput) {
@@ -417,7 +417,7 @@
 		  }
 		}, false);
 
-	canvas.addEventListener('touchmove', function(e) {
+	document.addEventListener('touchmove', function(e) {
 	  e.preventDefault(); // Prevent scrolling
 	  if (touchActive && e.touches.length > 0) {
 		  let currentX = e.touches[0].clientX;
@@ -427,7 +427,7 @@
 	  }
 	}, false);
 
-	canvas.addEventListener('touchend', function(e) {
+	document.addEventListener('touchend', function(e) {
 	  e.preventDefault();
 	  touchActive = false;
 	  touchStartX = null; // Reset initial touch point for next touch event
