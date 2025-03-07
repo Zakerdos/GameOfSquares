@@ -408,12 +408,12 @@
 	    controlsLocked = false;
 	    messageOverlay.textContent = "";
 	    // Prevent any default action
-// Listen for touchstart on the document
-document.addEventListener('touchstart', function(e) {
-  // Only prevent default if the game is unpaused
-  if (!paused) {
-    e.preventDefault();
-  }
+		// Listen for touchstart on the document
+		document.addEventListener('touchstart', function(e) {
+		  // Only prevent default if the game is unpaused
+		  if (!paused) {
+		    e.preventDefault();
+		  }
 
 	  if (e.touches.length > 0) {
 	    const touch = e.touches[0];
