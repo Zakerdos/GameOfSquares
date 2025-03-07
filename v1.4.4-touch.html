@@ -398,7 +398,7 @@
 	let touchDy = 0;
 
 	// Touch event listeners
-	document.addEventListener('touchstart', function(e) {
+	canvas.addEventListener('touchstart', function(e) {
 	  if (!paused) {
 		e.preventDefault();
 	  } // Prevent scrolling when unpaused
@@ -426,7 +426,7 @@
 			  }
 	}, {passive: false});
 
-	document.addEventListener('touchmove', function(e) {
+	canvas.addEventListener('touchmove', function(e) {
 	  if (!paused) {
 		e.preventDefault();
 	  } // Prevent scrolling when unpaused
@@ -438,7 +438,7 @@
 	  }
 	}, {passive: false});
 
-	document.addEventListener('touchend', function(e) {
+	canvas.addEventListener('touchend', function(e) {
 	  e.preventDefault();
 	  touchActive = false;
 	  touchStartX = null; // Reset initial touch point for next touch event
