@@ -397,76 +397,55 @@
 	let touchDx = 0;
 	let touchDy = 0;
 
-	// Canvas-level touchstart to unpause the game
-	canvas.addEventListener('touchstart', function(e) {
-	  // If the game is paused (or waiting for input), unpause it.
-	  if (paused || levelPaused || bossWaitForInput) {
-	    paused = false;
-	    levelPaused = false;
-	    bossWaitForInput = false;
-	    manualPause = false;
-	    controlsLocked = false;
-	    messageOverlay.textContent = "";
-	    // Prevent any default action
-		// Listen for touchstart on the document
-		document.addEventListener('touchstart', function(e) {
-		  // Only prevent default if the game is unpaused
-		  if (!paused) {
-		    e.preventDefault();
+	// Touch event listeners
+	document.addEventListener('touchstart', function(e) {
+	  if (!paused) {
+		e.preventDefault();
+	  } // Prevent scrolling when unpaused
+		  if (paused || levelPaused || bossWaitForInput) {
+			  paused = false;
+			  levelPaused = false;
+			  bossWaitForInput = false;
+			  manualPause = false;
+			  controlsLocked = false;
+			  messageOverlay.textContent = "";
 		  }
+		  // Check if game over and try again is available
+		  if (gameOver && tryAgainAvailable) {
+			restartGame();
+			return;
+		  }	  
+			  if (e.touches.length > 0) {
+				  touchActive = true;
+				  if (touchStartX === null && touchStartY === null) {
+					  touchStartX = e.touches[0].clientX;
+					  touchStartY = e.touches[0].clientY;
+				  }
+				  touchDx = 0;
+				  touchDy = 0;
+			  }
+	}, {passive: false});
 
-	  if (e.touches.length > 0) {
-	    const touch = e.touches[0];
-	    // Position the joystick overlay at the touch point
-	    joystickOverlay.style.left = touch.clientX + 'px';
-	    joystickOverlay.style.top = touch.clientY + 'px';
-	    // Display the joystick overlay
-	    joystickOverlay.style.display = 'block';
-	
-	    // Initialize touch variables
-	    touchActive = true;
-	    if (touchStartX === null && touchStartY === null) {
-	      touchStartX = touch.clientX;
-	      touchStartY = touch.clientY;
-	    }
-	    touchDx = 0;
-	    touchDy = 0;
-	  }
-	}, { passive: false });
-	
-	// Listen for touchmove on the document
 	document.addEventListener('touchmove', function(e) {
 	  if (!paused) {
-	    e.preventDefault();
+		e.preventDefault();
+	  } // Prevent scrolling when unpaused
+	  if (touchActive && e.touches.length > 0) {
+		  let currentX = e.touches[0].clientX;
+		  let currentY = e.touches[0].clientY;
+		  touchDx = currentX - touchStartX;
+		  touchDy = currentY - touchStartY;
 	  }
-	
-	  if (e.touches.length > 0) {
-	    const touch = e.touches[0];
-	    // Update the joystick overlay position to follow the touch
-	    joystickOverlay.style.left = touch.clientX + 'px';
-	    joystickOverlay.style.top = touch.clientY + 'px';
-	
-	    // Update movement variables
-	    touchDx = touch.clientX - touchStartX;
-	    touchDy = touch.clientY - touchStartY;
-	  }
-	}, { passive: false });
-	
-	// Listen for touchend on the document
+	}, {passive: false});
+
 	document.addEventListener('touchend', function(e) {
-	  if (!paused) {
-	    e.preventDefault();
-	  }
-	
-	  // Hide the joystick overlay and reset variables
-	  joystickOverlay.style.display = 'none';
+	  e.preventDefault();
 	  touchActive = false;
-	  touchStartX = null;
+	  touchStartX = null; // Reset initial touch point for next touch event
 	  touchStartY = null;
 	  touchDx = 0;
 	  touchDy = 0;
-	}, { passive: false });
-
+	}, {passive: false});
 	
     canvas.addEventListener('contextmenu', function(event) {
       event.preventDefault();
