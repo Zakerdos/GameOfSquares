@@ -1157,10 +1157,13 @@
 	// Orb Colour Randomiser
 	function getRandomOrbColor() {
 	  const rand = Math.random();
-
-	  if (rand < 0.1) {                                                 // 10% Purple
-		purpleorbUsed = true;
-		return PURPLE_COLOUR;
+	  if (rand < 0.1) {                                                 // 10% Purple (Only 1 per level)
+		if (!purpleorbUsed) {
+		  purpleorbUsed = true;
+		  return PURPLE_COLOUR;
+		} else {
+		  return "green";
+		}
 	  }
 	  if (rand < 0.2) return ICE_COLOUR;                               // 10% Light Blue
 
@@ -1176,7 +1179,7 @@
 		clearPurplePower();
 		clearIcePower();
 		shieldAwardedForCurrentTempPurple = false;
-	        purpleorbUsed = false;
+	    purpleorbUsed = false;
 		hudorbIndicator.style.backgroundColor = "grey";
 		clearIcePower();
 		progress = 0;
@@ -1793,6 +1796,8 @@
 			case ICE_COLOUR:
 			  if (orbShape === "circle") {
 				// Sqr collided with a light blue circle orb
+				sqr.color = ICE_COLOUR;                                 // Semi-Permanent Ice
+				sqr.temporarilyFrozen = true;
 			  } else if (orbShape === "hex") {
 				// Sqr collided with a light blue hex orb
 			  }
@@ -2254,13 +2259,17 @@
 		  sqr.y += sqr.speedY;
 		}
 		
-		// Check collision with the player.
+		// Sqr collision with the player.
 		if (
 		  player.x < sqr.x + sqr.size &&
 		  player.x + player.size > sqr.x &&
 		  player.y < sqr.y + sqr.size &&
 		  player.y + player.size > sqr.y
-		) {
+) {
+  // If the square is temporarily frozen, remove it on collision.
+  if (sqr.temporarilyFrozen) {
+    sqr.toRemove = true;
+  }
 		  if (sqr.temporarilyPurple) {
 			sqr.toRemove = true;
 		  } else if (player.shieldCount > 0) {
