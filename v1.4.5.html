@@ -1788,7 +1788,8 @@
 			case PURPLE_COLOUR:
 			  if (orbShape === "circle") {
 				// Sqr collided with a purple circle orb
-				sqrs.splice(index, 1);					                // Kill the square			
+				sqrs.splice(index, 1);					                // Kill the square
+				hudorbIndicator.style.backgroundColor = PURPLE_COLOUR;                  // Set the indicator
 			  } else if (orbShape === "hex") {
 				// Sqr collided with a purple hex orb
 			  }
