@@ -3357,7 +3357,7 @@
 		
 		// Boss debug clicks
 		function evolveBoss() {
-			if (debug || !boss || !bossFight) return; // No boss to evolve
+			if (debug && (!boss || !bossFight)) return; // No boss to evolve
 
 			if (bossState === "yellow") {
 				bossState = "orange";
