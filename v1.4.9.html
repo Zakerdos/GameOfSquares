@@ -6,7 +6,6 @@
   <title>A Game of Squares</title>
   <style>
 	html, body {
-	  overflow: hidden;    /* Prevents scrollbars from appearing */
 	  touch-action: none;  /* Disables default touch actions like scrolling and zooming */
 	}
     body {
@@ -319,6 +318,7 @@
 		triangles[0].addEventListener("click", () => {
 		  hasTriGreen = hasTriGreen === 1 ? 0 : 1;
 		  hasGreenArrow = hasGreenArrow === 1 ? 0 : 1;
+		  hasTwinOrb = hasTwinOrb === 1 ? 0 : 1;
 		  triHud();
 		});
 		// Middle triangle toggles hasTriBlue
@@ -675,6 +675,7 @@
 	  // Left triangle (green)
 	  if (hasTriGreen === 1) {
 		hasGreenArrow = 1;
+		hasTwinOrb = 1;
 		triangles[0].style.backgroundColor = "green";
 		triangles[0].classList.add("green");
 		triangles[0].style.boxShadow = "none";
@@ -1054,8 +1055,10 @@
 	let lastPlayerMoveTime = Date.now();
 	let overrideNextBossShot = false;
 	let lastPlayerX = player.x;
-	let lastPlayerY = player.y;		
+	let lastPlayerY = player.y;	
+	// Green Powers	
 	let hasGreenArrow = 0;
+	let hasTwinOrb = 0;
 	
 	// boss fight globals
 	let bossFight = false;
@@ -2362,21 +2365,41 @@
 	  size = 40, 
 	  colour = "#663300", 
 	  title = "Default Shop Token", 
-	  cost = 1, 
+	  cost = 1,
+	  reward = null,
 	  payment = "blue", 
 	  x = canvas.width / 2, 
 	  y = canvas.height / 2 ,
-	  active = false,
-	  reward = null
+	  active = false
 	} = {}) {
-	  const token = { size, colour, title, cost, payment, x, y, active, reward};
+	  const token = { size, colour, title, cost, reward, payment, x, y, active};
 	  shopTokens.push(token);
 	}	
-
+	// Center the player in the shop
 	function moveShopper() {
 	  player.x = canvas.width / 2 - player.size / 2;
 	  player.y = canvas.height / 2 - player.size / 2 + 50;
 	}
+
+		// Shop stock		
+		// 1st stall - Green Stock
+		const shopStock1 = [
+		  { title: "+1 Life", cost: 2, reward: "Life" },
+		  { title: "+1 Shield", cost: 2, reward: "Shield" },
+		  { title: "+1 Level", cost: 3, reward: "Level" },
+		  { title: "Green Arrow", cost: 4, reward: "greenArrow" },
+		];
+		// 2nd stall - Blue Stock
+		const shopStock2 = [
+		  { title: "+1 Shield", cost: 1, reward: "Life" },
+		  { title: "+1 Level", cost: 1, reward: "Level" },
+		];		
+		// 3rd stall - Purple Stock
+		const shopStock3 = [
+		  { title: "+1 Life", cost: 1, reward: "Life" },
+		  { title: "+1 Level", cost: 1, reward: "Level" },
+	   // { title: "Twin Orbs", cost: 2, reward: "twinOrb" },
+		];
 	
 	function openShop() {
 		shop = true;
@@ -2385,44 +2408,51 @@
 		rocks = [];
 		mud = [];
 		orbActive = false;
-		// Center the player
 		moveShopper();
 		playerTrail = [];
+  	    shopTokens = [];
+		// Get a random shopToken from each shopStock array:
+		const stockOption1 = getRandomElement(shopStock1);
+		const stockOption2 = getRandomElement(shopStock2);
+		const stockOption3 = getRandomElement(shopStock3);
 		// Pause game and display text until the player moves.
 		setPause(true, "#444", "Secret Shop");
-
-		// Life random
-		const freeLife = Math.floor(Math.random() * 3) + 1;
 		
-		// Shop stock
+		// Generic function to return a random element from any array.
+		function getRandomElement(arr) {
+		  const index = Math.floor(Math.random() * arr.length);
+		  return arr[index];
+		}
+		
+		// Stall setup
 		if (shop === true) {
 			if (shopTokens.length === 0) {
 				createShopToken({
-					title: "+1 Life",
-					cost: 2,
+					title: stockOption1.title,
+					cost: stockOption1.cost,
+					reward: stockOption1.reward,
 					payment: "green",
 					x: canvas.width / 2 - 300,
 					y: canvas.height / 2 - 220,
-					active: false,
-					reward: "extraLife"
+					active: false
 				});
 				createShopToken({
-					title: "+1 Shield",
-					cost: 1,
+					title: stockOption2.title,
+					cost: stockOption2.cost,
+					reward: stockOption2.reward,
 					payment: "blue",
 					x: canvas.width / 2,
 					y: canvas.height / 2 -220,
-					active: false,
-					reward: "extraShield"
+					active: false
 				});
 				createShopToken({
-					title: "+1 Life",
-					cost: 1,
+				    title: stockOption3.title,
+				    cost: stockOption3.cost,
+				    reward: stockOption3.reward,
 					payment: PURPLE_COLOUR,
 					x: canvas.width / 2 + 300,
 					y: canvas.height / 2 -220,
-					active: false,
-					reward: "extraLife"
+					active: false
 				});
 			}
 		}
@@ -2431,6 +2461,7 @@
 	// This function checks for a collision between the player and a shop token's triangle.
 	function playerTokenCollision(token) {
 	  // Only process if the token is active (using the string "true")
+	  if (!shop) { return; }
 	  if (token.active === false) return;
 	  
 	  // Use the same dimensions as in drawShopToken
@@ -2463,8 +2494,11 @@
 	  if (token.payment === "green")       { progress -= token.cost;	}
 	  if (token.payment === PURPLE_COLOUR) { player.shieldCount -= token.cost;	}	  
 	  // Get what you paid for
-	  if (token.reward === "extraLife") {player.lives++}
-	  if (token.reward === "extraShield") {player.shieldCount++}
+	  if (token.reward === "Life") {player.lives++}
+	  if (token.reward === "Shield") {player.shieldCount++}
+	  if (token.reward === "Level") {player.level++}
+	  if (token.reward === "greenArrow") {hasGreenArrow = 1}
+	  if (token.reward === "twinOrb") {hasTwinOrb = 1}
 	  // Reset token
 	  token.active = false;
 	}
@@ -3388,7 +3422,7 @@
 		  ctx.fillRect(sqr.x, sqr.y, sqr.size, sqr.size);
 
 		  // Handle Green Arrow Power
-		  if (hasGreenArrow === 1) {
+		  if (hasGreenArrow === 1 && gamePaused) {
 			const centerX = sqr.x + sqr.size / 2;
 			const centerY = sqr.y + sqr.size / 2;
 			const angle = Math.atan2(sqr.speedY, sqr.speedX);
@@ -3604,6 +3638,7 @@
 		  if (debug && e.key === "End") {
 		    // ==========================================
 			openShop();
+			progress = 4;
 		    // ==========================================
 			console.log("Debug key pressed");
 		  }
