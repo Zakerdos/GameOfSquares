@@ -2594,6 +2594,7 @@
       sqrs = [];
       rocks = [];
       mud = [];
+	  orbActive = false;
       // Create boss in the center.
       boss = {
         x: canvas.width / 2 - 50,
@@ -2634,13 +2635,20 @@
 		const dy = centerPlayerY - centerSqrY;
 		const distance = Math.hypot(dx, dy);
 
+		// Determine if the square is in a mud zone.
+		for (let zone of mud) {
+			if (isIntersecting({ x: sqr.x, y: sqr.y, size: sqr.size }, zone)) {
+				sqr.inMud = true;
+				if (debug) { console.log("In mud!")};
+				break;
+			} else {sqr.inMud = false;}
+		}	
 		// Determine the size and speed from colour.
 		let fixedSpeed = 0;
-		if (sqr.color === "yellow")   { sqr.size = YELLOW_SIZE, sqr.speed = YELLOW_SPEED; }
-		if (sqr.color === "orange")   { sqr.size = ORANGE_SIZE, sqr.speed = ORANGE_SPEED; }
-		if (sqr.color === "red")      { sqr.size = RED_SIZE,    sqr.speed = RED_SPEED;    }
-		if (sqr.color === ICE_COLOUR) {                         sqr.speed = ICE_SPEED;    }
-
+			if (sqr.color === "yellow")   { sqr.size = YELLOW_SIZE, sqr.speed = YELLOW_SPEED * (sqr.inMud ? MUD_SLOW : 1)};
+			if (sqr.color === "orange")   { sqr.size = ORANGE_SIZE, sqr.speed = ORANGE_SPEED * (sqr.inMud ? MUD_SLOW : 1)};
+			if (sqr.color === "red")      { sqr.size = RED_SIZE,    sqr.speed = RED_SPEED    * (sqr.inMud ? MUD_SLOW : 1)};
+			if (sqr.color === ICE_COLOUR) {                         sqr.speed = ICE_SPEED    * (sqr.inMud ? MUD_SLOW : 1)};
 		// Determine if this square is running away.
 		const runningAway = (sqr.color === PURPLE_COLOUR || sqr.color === FLASH_COLOUR);
 		
@@ -2692,16 +2700,6 @@
 		  orbCollision(orb.color, orb.shape, "sqr", sqr, index);
 		}
 
-		// Determine if the square is in a mud zone.
-		let inMud = false;
-		for (let zone of mud) {
-		  if (isIntersecting({ x: sqr.x, y: sqr.y, size: sqr.size }, zone)) {
-			inMud = true;
-			break;
-		  }
-		}
-		sqr.inMud = inMud;
-		
 		// Apply the mud slowdown.
 		const slowdownMultiplier = sqr.inMud ? MUD_SLOW : 1;
 		let effectiveSpeedX = sqr.speedX * slowdownMultiplier;
