@@ -2668,6 +2668,8 @@
 			pos = getValidSpawnPosition(player.size, rocks.concat(sqrs, [orb]));
 		    player.x = pos.x;
 		    player.y = pos.y;
+			shop = false;
+			triGreen.active = shop;
 			nextLevel();
 		}
 	};
@@ -3751,6 +3753,7 @@
 	  bossRocks = [];
 	  bossShots = [];
 	  shop = false;
+      triGreen.active = shop;
 	  triGreen.shields = [true, true, true, true];
 	  shopsPatronised = {};
 	  currentShopId = null; 
