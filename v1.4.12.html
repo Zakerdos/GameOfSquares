@@ -3862,8 +3862,12 @@
 		  inputCodeBuffer = inputCodeBuffer.slice(-4);
 		}
 		if (inputCodeBuffer === "0000") {
+			highScore = 1;
+			hasTriGreen = 0;
+			hasTriBlue = 0;
+			hasTriPurple = 0;			
 		    resetGameData();
-		    if (debug) { console.log("Cleared local data");}
+		    console.log("Cleared local data");
 		}
 		if (inputCodeBuffer === "2505") {
 		    inputNoWrap = true;
