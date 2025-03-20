@@ -3946,6 +3946,7 @@
 
 	  // Input code detection
 	  // 0000 - Clear Local
+	  // 2001 - Suicide
 	  // 2505 - Clyde Walls
 	  // 3712 - Sophie Pink
 	  if ("0123456789".includes(event.key)) {
@@ -3961,6 +3962,10 @@
 			hasTriPurple = 0;			
 		    resetGameData();
 		    console.log("Cleared local data");
+		}
+		if (inputCodeBuffer === "2001") {
+			player.lives = 0;
+		    console.log("That looked like it hurt...");
 		}
 		if (inputCodeBuffer === "2505") {
 		    inputNoWrap = true;
