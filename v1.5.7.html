@@ -3458,6 +3458,7 @@
 		) {
 		  // If the square is temporarily frozen, remove it on collision.
 		  if (sqr.temporarilyFrozen) {
+			if (player.shieldCount === 0) { playerHit() };
 			sqr.toRemove = true;
 			createExplosion(sqr.x + sqr.size / 2, sqr.y + sqr.size / 2, 50, [sqr.color]);
 		  }
